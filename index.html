@@ -121,7 +121,7 @@ nav button.active::after{content:'';position:absolute;top:0;left:50%;transform:t
 .fv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;}
 
 /* EVENTS */
-.ev-card{background:var(--surf);border:1px solid var(--brd);border-radius:13px;padding:14px;margin-bottom:9px;cursor:pointer;transition:border-color .2s,box-shadow .2s;box-shadow:var(--card-sh);position:relative;}
+.ev-card{background:var(--surf);border:1px solid var(--brd);border-radius:13px;padding:0;margin-bottom:12px;cursor:pointer;transition:border-color .2s,box-shadow .2s;box-shadow:var(--card-sh);overflow:hidden;position:relative;}
 .ev-card.active-ev{border-color:var(--gold);box-shadow:0 0 0 2px var(--gdim);}
 .ev-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;margin-bottom:3px;}
 .ev-meta{font-size:11px;color:var(--mut);display:flex;gap:8px;flex-wrap:wrap;}
@@ -294,7 +294,10 @@ nav button.active::after{content:'';position:absolute;top:0;left:50%;transform:t
 <!-- EVENTOS -->
 <div id="page-eventos" class="page active">
   <div class="sh"><div class="sh-icon">📅</div><div><div class="sh-title">Eventos</div><div class="sh-sub" id="ev-count">Nenhum evento</div></div></div>
-  <div id="ev-list"><div style="text-align:center;padding:40px 0"><div style="font-size:48px;margin-bottom:10px">📅</div><p style="color:var(--mut);font-size:13px">Nenhum evento criado.<br>Toque em + para criar.</p></div></div>
+  <button onclick="syncSiteEvents()" id="btn-sync-site" style="width:100%;background:linear-gradient(135deg,#B8860B,#D4A830);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Barlow,sans-serif;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+    <span id="sync-site-icon">🔄</span> <span id="sync-site-txt">SINCRONIZAR COM FERAESPORTES.COM.BR</span>
+  </button>
+  <div id="ev-list"><div style="text-align:center;padding:40px 0"><div style="font-size:48px;margin-bottom:10px">📅</div><p style="color:var(--mut);font-size:13px">Nenhum evento criado.<br>Toque em + para criar ou sincronizar com o site.</p></div></div>
 </div>
 
 <!-- PAINEL (DASHBOARD) -->
@@ -980,6 +983,166 @@ function updateHeader(){
   var ev=getEv();
   el('hev-name').textContent=ev?ev.nome:'Nenhum evento ativo';
 }
+// ── SYNC COM FERAESPORTES.COM.BR ──
+var FERA_BASE = 'https://www.feraesportes.com.br';
+var _syncing = false;
+
+function syncSiteEvents(){
+  if(_syncing){toast('\u23F3 Sincronizando...');return;}
+  _syncing = true;
+  var btn = el('btn-sync-site');
+  var icon = el('sync-site-icon');
+  var txt = el('sync-site-txt');
+  if(icon) icon.textContent = '\u23F3';
+  if(txt) txt.textContent = 'Buscando eventos...';
+  if(btn) btn.style.opacity = '0.7';
+
+  // Try multiple CORS proxies in sequence
+  var proxies = [
+    'https://api.allorigins.win/get?url=' + encodeURIComponent(FERA_BASE + '/'),
+    'https://corsproxy.io/?' + encodeURIComponent(FERA_BASE + '/'),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(FERA_BASE + '/')
+  ];
+  var _proxyIdx = 0;
+
+  function _tryProxy(){
+    if(_proxyIdx >= proxies.length){ _syncFallback(); return; }
+    var url = proxies[_proxyIdx++];
+    fetch(url)
+      .then(function(r){ return r.json().catch(function(){ return r.text().then(function(t){return {contents:t};}); }); })
+      .then(function(data){
+        var html = data.contents || data || '';
+        if(typeof html !== 'string') html = JSON.stringify(html);
+      var events = _parseSiteEvents(html);
+        if(!events.length){ _tryProxy(); return; }
+        var added = 0;
+        var existingIds = Object.values(db.events).map(function(ev){return ev.siteId;}).filter(Boolean);
+        events.forEach(function(ev){
+          if(existingIds.indexOf(ev.siteId) !== -1) return;
+          var id = 'ev_site_' + ev.siteId + '_' + Date.now();
+          db.events[id] = {
+            id:id, siteId:ev.siteId, nome:ev.nome, data:ev.data,
+            cidade:ev.cidade||'', foto:ev.foto||null, fotoUrl:ev.fotoUrl||null,
+            siteUrl:ev.siteUrl, modalidade:'corrida', distancias:[],
+            valor:0, participants:[], createdAt:new Date().toISOString(), syncedAt:new Date().toISOString()
+          };
+          added++;
+        });
+        if(added > 0){
+          if(!db.activeEventId){
+            var newEvs=Object.values(db.events).filter(function(e){return e.siteId;});
+            if(newEvs.length) db.activeEventId=newEvs[0].id;
+          }
+          save();
+          toast('\u2705 ' + added + ' evento(s) importado(s) do site!');
+        } else {
+          toast('\u2714 Tudo atualizado! Nenhum evento novo.');
+        }
+        _syncDone();
+      })
+      .catch(function(e){
+        console.warn('Sync error proxy '+_proxyIdx+':', e);
+        _tryProxy();
+      });
+  }
+  _tryProxy();
+}
+
+function _syncFallback(){
+  // Try direct fetch as fallback
+  fetch(FERA_BASE + '/')
+    .then(function(r){ return r.text(); })
+    .then(function(html){
+      var events = _parseSiteEvents(html);
+      var added = 0;
+      var existingIds = Object.values(db.events).map(function(ev){return ev.siteId;}).filter(Boolean);
+      events.forEach(function(ev){
+        if(existingIds.indexOf(ev.siteId) !== -1) return;
+        var id = 'ev_site_' + ev.siteId + '_' + Date.now();
+        db.events[id] = {
+          id:id, siteId:ev.siteId, nome:ev.nome, data:ev.data,
+          cidade:ev.cidade||'', foto:ev.foto||null, fotoUrl:ev.fotoUrl||null,
+          siteUrl:ev.siteUrl, modalidade:'corrida', distancias:[],
+          valor:0, participants:[], createdAt:new Date().toISOString(), syncedAt:new Date().toISOString()
+        };
+        added++;
+      });
+      if(added > 0){ save(); toast('\u2705 ' + added + ' evento(s) importado(s)!'); }
+      else toast('\u2714 Tudo atualizado!');
+      _syncDone();
+    })
+    .catch(function(e){
+      toast('\u26A0\uFE0F Erro ao sincronizar. Tente novamente.');
+      console.warn('Fallback sync error:', e);
+      _syncDone();
+    });
+}
+
+function _parseSiteEvents(html){
+  var events = [];
+  // Parse event blocks — pattern: evento.php?id=XX
+  var idPattern = /evento\.php\?id=(\d+)/g;
+  var ids = [];
+  var m;
+  while((m = idPattern.exec(html)) !== null){
+    var sid = m[1];
+    if(ids.indexOf(sid) === -1) ids.push(sid);
+  }
+
+  ids.forEach(function(sid){
+    // Extract block around this event ID
+    var blockStart = html.indexOf('evento.php?id=' + sid);
+    if(blockStart === -1) return;
+    // Go back ~800 chars to find the image
+    var blockSearch = html.substring(Math.max(0, blockStart - 800), blockStart + 400);
+    
+    // Extract photo URL
+    var imgMatch = blockSearch.match(/src=["']([^"']*img_eventos[^"']+)["']/);
+    var fotoUrl = imgMatch ? (imgMatch[1].startsWith('http') ? imgMatch[1] : FERA_BASE + '/' + imgMatch[1].replace(/^\//, '')) : null;
+    
+    // Extract name from h4
+    var nameMatch = blockSearch.match(/<h4[^>]*>([^<]+)<\/h4>/);
+    // Also try strong/b tags or heading patterns
+    if(!nameMatch) nameMatch = blockSearch.match(/####\s*([^\n]+)/);
+    var nome = nameMatch ? nameMatch[1].trim() : 'Evento ' + sid;
+    // Clean up HTML entities
+    nome = nome.replace(/&amp;/g,'&').replace(/&ndash;/g,'–').replace(/&#[0-9]+;/g,'').replace(/<[^>]+>/g,'').trim();
+    
+    // Extract date
+    var dateMatch = blockSearch.match(/Dia do evento[^:]*:\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/);
+    var dataStr = '';
+    if(dateMatch){
+      var parts = dateMatch[1].split('/');
+      if(parts.length === 3) dataStr = parts[2] + '-' + parts[1] + '-' + parts[0]; // YYYY-MM-DD
+    }
+
+    if(nome && nome !== 'Evento ' + sid){
+      events.push({
+        siteId: sid,
+        nome: nome,
+        data: dataStr,
+        fotoUrl: fotoUrl,
+        foto: fotoUrl, // use URL directly as foto
+        cidade: '',
+        siteUrl: FERA_BASE + '/evento.php?id=' + sid
+      });
+    }
+  });
+
+  return events;
+}
+
+function _syncDone(){
+  _syncing = false;
+  var icon = el('sync-site-icon');
+  var txt = el('sync-site-txt');
+  var btn = el('btn-sync-site');
+  if(icon) icon.textContent = '\uD83D\uDD04';
+  if(txt) txt.textContent = 'SINCRONIZAR COM FERAESPORTES.COM.BR';
+  if(btn) btn.style.opacity = '1';
+  renderEvents();
+}
+
 function renderEvents(){
   var evs=Object.values(db.events).sort(function(a,b){return(b.createdAt||'').localeCompare(a.createdAt||'');});
   var cnt=el('ev-count');
@@ -989,17 +1152,31 @@ function renderEvents(){
   lst.innerHTML=evs.map(function(ev){
     var pts=ev.participants||[];
     var isActive=db.activeEventId===ev.id;
-    var impHash=ev.importHash?'<span style="font-size:9px;color:var(--mut2)" title="Hash: '+ev.importHash.substring(0,8)+'...">🔒</span> ':'';
-    return '<div class="ev-card'+(isActive?' active-ev':'')+'">'
-      +(isActive?'<div class="ev-badge">ATIVO</div>':'')
-      +'<div class="ev-name">'+ev.nome+'</div>'
-      +'<div class="ev-meta">'
-      +(ev.data?'<span>📅 '+fmtDate(ev.data)+'</span>':'')
+    var fotoSrc=ev.foto||ev.fotoUrl||null;
+    var coverHtml=fotoSrc
+      ?'<div style="position:relative;width:100%;height:140px;border-radius:10px 10px 0 0;overflow:hidden;background:#111">'
+        +'<img src="'+fotoSrc+'" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'
+        +(isActive?'<div style="position:absolute;top:8px;right:8px;background:#B8860B;color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:1px">ATIVO</div>':'')
+        +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.75));padding:10px 12px 8px">'
+        +'<div style="color:#fff;font-size:13px;font-weight:800;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.8)">'+ev.nome+'</div>'
+        +(ev.data?'<div style="color:rgba(255,255,255,0.85);font-size:11px;margin-top:2px">📅 '+fmtDate(ev.data)+'</div>':'')
+        +'</div></div>'
+      :'<div style="background:linear-gradient(135deg,#1a1a1a,#2d2d2d);border-radius:10px 10px 0 0;padding:18px 14px 14px;position:relative">'
+        +(isActive?'<div style="position:absolute;top:8px;right:8px;background:#B8860B;color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:1px">ATIVO</div>':'')
+        +'<div style="font-size:32px;margin-bottom:6px">📅</div>'
+        +'<div style="color:#fff;font-size:13px;font-weight:800">'+ev.nome+'</div>'
+        +(ev.data?'<div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:3px">📅 '+fmtDate(ev.data)+'</div>':'')
+        +'</div>';
+    return '<div class="ev-card'+(isActive?' active-ev':'')+'" style="padding:0;overflow:hidden">'
+      +coverHtml
+      +'<div style="padding:10px 12px 4px">'
+      +'<div class="ev-meta" style="margin-top:2px">'
       +(ev.cidade?'<span>📍 '+ev.cidade+'</span>':'')
+      +(ev.siteId?'<span>🌐 Site #'+ev.siteId+'</span>':'')
       +'<span>👥 '+pts.length+' atletas</span>'
       +(ev.valor?'<span>💰 R$ '+fmtMoney(ev.valor)+'</span>':'')
-      +'</div>'
-      +'<div class="ev-actions">'
+      +'</div></div>'
+      +'<div class="ev-actions" style="padding:0 10px 10px;gap:6px">'
       +(isActive
         ?'<button class="btn btn-b" style="flex:1;padding:7px;font-size:11px" onclick="desativarEvento(event)">✕ Desativar</button>'
         :'<button class="btn btn-p" style="flex:1;padding:7px;font-size:11px" onclick="selecionarEvento(\''+ev.id+'\',event)">▶ Selecionar</button>')
