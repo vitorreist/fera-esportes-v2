@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#F4F1EB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Fera Esportes</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<style>
+:root{
+  --bg:#F4F1EB;--bg2:#EDE9DF;--surf:#FFFFFF;--surf2:#F9F6F0;
+  --brd:#DDD8CC;--brd2:#C8C2B4;--inp:#F4F1EB;
+  --gold:#B8860B;--gold2:#D4A830;--gdim:rgba(184,134,11,0.10);--gglow:rgba(184,134,11,0.22);
+  --txt:#1A1A1A;--mut:#6B6560;--mut2:#A09890;
+  --grn:#0A7A42;--red:#CC2233;--blu:#0066BB;--yel:#CC8800;--pur:#7C3AED;
+  --card-sh:0 2px 8px rgba(0,0,0,0.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow-x:hidden;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--txt);max-width:430px;margin:0 auto;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(-55deg,transparent,transparent 40px,rgba(184,134,11,0.03) 40px,rgba(184,134,11,0.03) 41px);}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s;}
+.sp-logo{display:flex;flex-direction:column;align-items:center;gap:0;animation:spDrop .7s cubic-bezier(.23,1.2,.32,1) both;}
+@keyframes spDrop{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+.sp-icon{font-size:64px;filter:drop-shadow(0 0 24px var(--gold));animation:roar 2s ease-in-out infinite;}
+@keyframes roar{0%,100%{filter:drop-shadow(0 0 16px var(--gold))}50%{filter:drop-shadow(0 0 36px var(--gold2))}}
+.sp-name{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;letter-spacing:4px;text-transform:uppercase;color:var(--gold);line-height:1;margin-top:8px;}
+.sp-sub{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:6px;text-transform:uppercase;color:var(--mut);margin-top:4px;}
+.sp-bar{width:180px;height:3px;background:var(--brd);margin-top:36px;border-radius:2px;overflow:hidden;}
+.sp-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));animation:spLoad 1.8s ease forwards;border-radius:2px;}
+@keyframes spLoad{0%{width:0}100%{width:100%}}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:100;background:rgba(244,241,235,.97);backdrop-filter:blur(16px);border-bottom:2px solid var(--gold);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
+header{position:sticky;top:0;z-index:100;background:rgba(244,241,235,.97);-webkit-backdrop-filter:blur(16px);border-bottom:2px solid var(--gold);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
+header::after{content:'';position:absolute;top:0;right:0;width:120px;height:100%;background:linear-gradient(90deg,transparent,rgba(184,134,11,0.05));pointer-events:none;}
+.hl{display:flex;align-items:center;gap:9px;}
+.hbrand{font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:900;letter-spacing:2px;text-transform:uppercase;line-height:1;}
+.hbrand .fe{color:var(--gold);}
+.hbrand .es{color:var(--txt);font-weight:600;}
+.hev{font-size:10px;color:var(--mut);font-weight:600;letter-spacing:0.5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.add-btn{width:33px;height:33px;border-radius:8px;border:none;cursor:pointer;background:var(--gold);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px var(--gglow);transition:transform .15s;}
+.add-btn:active{transform:scale(0.92);}
+
+/* NAV */
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);border-top:1px solid var(--brd);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(255,255,255,.98);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--brd);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+nav::before{content:'';position:absolute;top:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;}
+nav button{flex:1;padding:10px 1px 7px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--mut2);transition:color .2s;font-family:'Barlow',sans-serif;position:relative;}
+nav button.active{color:var(--gold);}
+nav button .ni{font-size:20px;}
+nav button .nl{font-size:7.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+nav button.active::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--gold);border-radius:0 0 3px 3px;}
+
+/* PAGES */
+.page{display:none;padding:16px 14px 105px;animation:pgIn .25s ease;position:relative;z-index:1;}
+.page.active{display:block;}
+@keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sh-icon{width:38px;height:38px;border-radius:9px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 3px 10px var(--gglow);}
+.sh-title{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:2px;text-transform:uppercase;line-height:1;}
+.sh-sub{font-size:10px;color:var(--mut);font-weight:600;margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+
+/* CARD */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:13px;padding:15px;margin-bottom:11px;box-shadow:var(--card-sh);}
+.ct{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;}
+
+/* STAT GRID */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px;}
+.sc{background:var(--surf);border:1px solid var(--brd);border-radius:11px;padding:13px 13px 11px;position:relative;overflow:hidden;box-shadow:var(--card-sh);}
+.sc::after{content:'';position:absolute;bottom:0;right:0;width:44px;height:44px;border-radius:50%;opacity:.08;transform:translate(12px,12px);}
+.sc.gld::after{background:var(--gold);}
+.sc.blu::after{background:var(--blu);}
+.sc.grn::after{background:var(--grn);}
+.sc.red::after{background:var(--red);}
+.ts{font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--mut2);margin-bottom:3px;}
+.sv{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;line-height:1;}
+.sc.gld .sv{color:var(--gold);}
+.sc.blu .sv{color:var(--blu);}
+.sc.grn .sv{color:var(--grn);}
+.sc.red .sv{color:var(--red);}
+.sl{font-size:10px;color:var(--mut);margin-top:3px;}
+
+/* SHIRT GRID */
+.shg{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;}
+.shb{text-align:center;background:var(--surf2);border:1px solid var(--brd);border-radius:7px;padding:7px 2px;}
+.shs{font-size:9px;font-weight:800;color:var(--gold);letter-spacing:.5px;}
+.shc{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--txt);}
+.shp{font-size:8px;color:var(--mut);}
+
+/* BARS */
+.br{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.blb{font-size:11px;color:var(--mut);width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btr{flex:1;background:var(--surf2);border-radius:4px;height:18px;overflow:hidden;}
+.bfill{height:18px;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;min-width:24px;transition:width .4s;}
+.bnum{font-size:10px;font-weight:700;color:#fff;padding-right:5px;font-family:'JetBrains Mono',monospace;}
+
+/* CRM PIPELINE */
+.cs{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--brd);cursor:pointer;}
+.cs:last-child{border-bottom:none;}
+.cd{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.cn{flex:1;font-size:12px;font-weight:600;}
+.cnum{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--gold);}
+
+/* FINANCIAL */
+.fr2{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--brd);}
+.fr2:last-child{border-bottom:none;}
+.flb{font-size:12px;color:var(--mut);}
+.fv{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;}
+
+/* EVENTS */
+.ev-card{background:var(--surf);border:1px solid var(--brd);border-radius:13px;padding:0;margin-bottom:12px;cursor:pointer;transition:border-color .2s,box-shadow .2s;box-shadow:var(--card-sh);overflow:hidden;position:relative;}
+.ev-card.active-ev{border-color:var(--gold);box-shadow:0 0 0 2px var(--gdim);}
+.ev-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;margin-bottom:3px;}
+.ev-meta{font-size:11px;color:var(--mut);display:flex;gap:8px;flex-wrap:wrap;}
+.ev-badge{background:var(--gold);color:#fff;font-size:8px;font-weight:800;letter-spacing:1px;padding:2px 7px;border-radius:20px;text-transform:uppercase;position:absolute;top:12px;right:12px;}
+.ev-actions{display:flex;gap:6px;margin-top:10px;}
+
+/* PARTICIPANT ITEM */
+.pi{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf);border:1px solid var(--brd);border-radius:11px;margin-bottom:7px;cursor:pointer;transition:border-color .15s;box-shadow:var(--card-sh);}
+.pi:active{border-color:var(--gold);}
+.av{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
+.av.m{background:rgba(0,102,187,.13);color:var(--blu);}
+.av.f{background:rgba(204,34,51,.10);color:var(--red);}
+.pn{font-size:13px;font-weight:700;line-height:1.2;}
+.pm{font-size:10px;color:var(--mut);margin-top:2px;}
+.ps{flex-shrink:0;}
+.badge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:3px 7px;border-radius:20px;letter-spacing:.5px;}
+
+/* TAGS */
+.tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.5px;margin:1px 1px;}
+.ts{background:var(--gdim);color:var(--gold);border:1px solid rgba(184,134,11,.2);}
+.tcat{background:rgba(0,102,187,.08);color:var(--blu);border:1px solid rgba(0,102,187,.15);}
+
+/* SEARCH */
+.sw{display:flex;align-items:center;gap:8px;background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:9px 12px;margin-bottom:10px;box-shadow:var(--card-sh);}
+.ic{font-size:15px;color:var(--mut);}
+.sb{flex:1;border:none;background:none;font-family:'Barlow',sans-serif;font-size:13px;color:var(--txt);outline:none;}
+.sb::placeholder{color:var(--mut2);}
+
+/* FILTER ROW */
+.fr{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
+.fr::-webkit-scrollbar{height:2px;}
+.fr::-webkit-scrollbar-track{background:transparent;}
+.fr::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:2px;}
+.chip{background:var(--surf);border:1px solid var(--brd);border-radius:20px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--mut);cursor:pointer;white-space:nowrap;font-family:'Barlow',sans-serif;flex-shrink:0;}
+.chip.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+
+/* BUTTONS */
+.btn{display:block;width:100%;padding:11px;border-radius:10px;border:none;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;letter-spacing:.5px;}
+.btn-p{background:var(--gold);color:#fff;}
+.btn-b{background:var(--surf2);border:1px solid var(--brd2);color:var(--txt);}
+.btn-g{background:#1B5E20;color:#fff;}
+.btn-r{background:var(--red);color:#fff;}
+.btn-wa{background:#128C7E;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;}
+
+/* IMPORT AREA */
+.ia{border:2px dashed var(--gold2);border-radius:13px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:11px;}
+.ia:hover{background:var(--gdim);}
+.ia.drag{background:var(--gdim);border-color:var(--gold);}
+
+/* WHATSAPP QUEUE */
+.qi{background:var(--surf2);border:1px solid var(--brd);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.qnum{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mut);width:22px;text-align:center;}
+
+/* COLUMN MAPPING */
+.cmr{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--brd);}
+.cmr:last-child{border-bottom:none;}
+.cml{font-size:12px;font-weight:600;color:var(--txt);}
+.cmr select{background:var(--surf2);border:1px solid var(--brd2);border-radius:7px;padding:5px 8px;font-family:'Barlow',sans-serif;font-size:11px;color:var(--txt);max-width:155px;}
+
+/* REGIME ITEM */
+.ri{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--brd);}
+.ri:last-child{border-bottom:none;}
+.rd{display:flex;flex-direction:column;gap:4px;flex:1;}
+.rl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase;}
+.rt{font-size:11px;color:var(--mut);}
+
+/* TOGGLE SWITCH */
+.tog{width:38px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.tog.on{background:var(--gold);}
+.tog.off{background:var(--brd2);}
+.tog::after{content:'';position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.tog.on::after{left:19px;}
+.tog.off::after{left:3px;}
+
+/* QR MODAL */
+#qr-canvas{display:block;margin:0 auto 12px;border-radius:8px;border:4px solid #fff;box-shadow:var(--card-sh);}
+
+/* LIVE EVENT */
+.li{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf);border:1px solid var(--brd);border-radius:10px;margin-bottom:6px;box-shadow:var(--card-sh);}
+.li.done{opacity:.55;}
+.li-name{flex:1;font-size:13px;font-weight:700;}
+.li-sz{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:var(--gold);width:28px;text-align:center;}
+.li-btn{padding:6px 12px;border:none;border-radius:7px;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.li-btn.pend{background:var(--gold);color:#fff;}
+.li-btn.done{background:var(--surf2);color:var(--mut);border:1px solid var(--brd);}
+
+/* INSIGHT */
+.insight{border-radius:10px;padding:11px 13px;margin-bottom:8px;border:1px solid;}
+.insight-t{font-size:12px;font-weight:700;margin-bottom:3px;}
+.insight-b{font-size:11px;line-height:1.5;color:var(--mut);}
+.insight.gld{background:rgba(184,134,11,.07);border-color:rgba(184,134,11,.2);color:var(--gold);}
+.insight.grn{background:rgba(10,122,66,.07);border-color:rgba(10,122,66,.2);color:var(--grn);}
+.insight.blu{background:rgba(0,102,187,.07);border-color:rgba(0,102,187,.2);color:var(--blu);}
+.insight.red{background:rgba(204,34,51,.07);border-color:rgba(204,34,51,.2);color:var(--red);}
+
+/* MODAL */
+.mo{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);display:none;align-items:flex-end;}
+.mo{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(6px);display:none;align-items:flex-end;}
+.mo.open{display:flex;}
+.md{background:var(--surf);border-radius:18px 18px 0 0;padding:20px 18px;width:100%;max-height:88vh;overflow-y:auto;position:relative;}
+.mh{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.mc{position:absolute;top:16px;right:16px;background:var(--surf2);border:1px solid var(--brd);border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mut);}
+.mf{display:flex;flex-direction:column;gap:8px;}
+.ml{font-size:11px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px;}
+.mi{padding:10px 12px;background:var(--inp);border:1px solid var(--brd2);border-radius:9px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--txt);width:100%;outline:none;}
+.mi:focus{border-color:var(--gold);}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.div{height:1px;background:var(--brd);margin:12px 0;}
+
+/* MODAL OPTS (modalidade toggle) */
+.modal-opts{display:flex;gap:6px;margin-bottom:4px;}
+.modal-opt{flex:1;padding:8px;border:1px solid var(--brd2);border-radius:9px;background:var(--surf2);font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;color:var(--mut);cursor:pointer;text-align:center;}
+.modal-opt.selected{border-color:var(--gold);background:var(--gdim);color:var(--gold);}
+
+/* DISTANCE TAGS */
+.dist-tags{display:flex;flex-wrap:wrap;gap:4px;padding:7px;background:var(--surf2);border:1px solid var(--brd);border-radius:9px;min-height:36px;}
+.dist-tag{background:var(--gdim);border:1px solid rgba(184,134,11,.25);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;}
+.dist-tag button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:11px;padding:0;line-height:1;}
+
+/* CONFIRM MODAL */
+#m-confirm .md{text-align:center;}
+.confirm-icon{font-size:40px;margin-bottom:8px;}
+.confirm-msg{font-size:14px;color:var(--mut);margin-bottom:16px;line-height:1.5;}
+.confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* TOAST */
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:9000;background:#1A1A1A;color:#fff;padding:9px 18px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;max-width:280px;text-align:center;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.chip.bf{font-size:10px;padding:5px 10px;white-space:nowrap}
+.wa-ev-photo{width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0;border:2px solid var(--brd2)}
+.wa-ev-photo-placeholder{width:52px;height:52px;border-radius:10px;background:var(--gdim);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--brd2);border-radius:3px;}
+
+/* DETAIL */
+.dg2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.df{display:flex;flex-direction:column;gap:3px;}
+.dl{font-size:10px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;}
+.di{padding:8px 10px;background:var(--inp);border:1px solid var(--brd);border-radius:8px;font-family:'Barlow',sans-serif;font-size:12px;color:var(--txt);width:100%;outline:none;}
+.di:focus{border-color:var(--gold);}
+</style>
+</head>
+<body>
+<div id="splash">
+  <div class="sp-logo">
+    <img src="data:image/jpeg;base64,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" style="width:130px;height:130px;object-fit:contain;border-radius:18px;filter:drop-shadow(0 0 20px rgba(184,134,11,0.45));animation:roar 2s ease-in-out infinite;" alt="Fera Esportes">
+    <div class="sp-sub" style="margin-top:12px">Gestão de Corridas</div>
+    <div class="sp-bar"><div class="sp-fill"></div></div>
+  </div>
+</div>
+
+<header>
+  <div class="hl">
+    <img src="data:image/jpeg;base64,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" style="width:36px;height:36px;object-fit:cover;border-radius:8px;" alt="Fera">
+    <div>
+      <div class="hbrand"><span class="fe">FERA</span> <span class="es">Esportes</span></div>
+      <div class="hev" id="hev-name">Nenhum evento ativo</div>
+    </div>
+  </div>
+  <button class="add-btn" onclick="openModal('m-new-ev')">+</button>
+</header>
+<div id="toast"></div>
+<div id="sync-status" style="position:fixed;bottom:72px;right:12px;font-size:10px;font-weight:700;background:var(--srf);border:1px solid var(--brd2);border-radius:20px;padding:4px 10px;z-index:999;opacity:0;transition:opacity .5s;pointer-events:none"></div>
+
+<!-- ── PAGES ── -->
+
+<!-- EVENTOS -->
+<div id="page-eventos" class="page active">
+  <div class="sh"><div class="sh-icon">📅</div><div><div class="sh-title">Eventos</div><div class="sh-sub" id="ev-count">Nenhum evento</div></div></div>
+  <button onclick="syncSiteEvents()" id="btn-sync-site" style="width:100%;background:linear-gradient(135deg,#B8860B,#D4A830);color:#fff;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:Barlow,sans-serif;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+    <span id="sync-site-icon">🔄</span> <span id="sync-site-txt">SINCRONIZAR COM FERAESPORTES.COM.BR</span>
+  </button>
+  <div id="ev-list"><div style="text-align:center;padding:40px 0"><div style="font-size:48px;margin-bottom:10px">📅</div><p style="color:var(--mut);font-size:13px">Nenhum evento criado.<br>Toque em + para criar ou sincronizar com o site.</p></div></div>
+</div>
+
+<!-- PAINEL (DASHBOARD) -->
+<div id="page-dashboard" class="page">
+  <div class="sh"><div class="sh-icon">📊</div><div><div class="sh-title">Dashboard</div><div class="sh-sub" id="dash-sub">Selecione um evento</div></div></div>
+  <!-- Countdown + Meta -->
+  <div id="dash-extras" style="display:none;gap:8px;margin-bottom:11px">
+    <div class="card" style="flex:1;padding:12px 13px;margin:0;display:flex;align-items:center;gap:10px">
+      <div style="font-size:26px">⏳</div>
+      <div><div id="countdown-num" style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:var(--gold);line-height:1"></div>
+      <div id="countdown-label" style="font-size:10px;color:var(--mut);margin-top:1px"></div></div>
+    </div>
+    <div class="card" style="flex:1;padding:12px 13px;margin:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <div style="font-size:10px;font-weight:700;color:var(--mut)">META</div>
+        <button onclick="openMetaEditor()" style="background:none;border:none;color:var(--gold);font-size:12px;cursor:pointer;padding:0">✏️</button>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:5px">
+        <span id="meta-current" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--gold)">0</span>
+        <span style="font-size:10px;color:var(--mut)">/ </span>
+        <span id="meta-goal" style="font-size:13px;font-weight:700;color:var(--mut)">—</span>
+      </div>
+      <div style="background:var(--inp);border-radius:5px;height:6px;overflow:hidden">
+        <div id="meta-bar" style="height:6px;border-radius:5px;background:var(--gold);transition:width .5s;width:0%"></div>
+      </div>
+      <div id="meta-pct" style="font-size:9px;color:var(--mut);margin-top:3px;text-align:right"></div>
+    </div>
+  </div>
+  <div id="meta-editor" style="display:none;background:var(--surf);border:1px solid var(--gold);border-radius:11px;padding:11px;margin-bottom:11px">
+    <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:7px">🎯 Meta de Inscrições</div>
+    <div style="display:flex;gap:7px;align-items:center">
+      <input type="number" id="meta-input" placeholder="Ex: 500" min="1" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--brd);background:var(--inp);color:var(--txt);font-size:13px;font-weight:700">
+      <button onclick="saveMeta()" class="btn btn-p" style="padding:8px 14px;white-space:nowrap">✅ Salvar</button>
+      <button onclick="document.getElementById('meta-editor').style.display='none'" style="background:none;border:none;color:var(--mut);font-size:16px;cursor:pointer">✕</button>
+    </div>
+  </div>
+  <div class="sg">
+    <div class="sc gld"><div class="ts"></div><div class="sv" id="s-total">0</div><div class="sl">Inscritos</div></div>
+    <div class="sc blu"><div class="ts"></div><div class="sv" id="s-cities">0</div><div class="sl">Cidades</div></div>
+    <div class="sc grn"><div class="ts"></div><div class="sv" id="s-m">0</div><div class="sl">Masculino</div></div>
+    <div class="sc red"><div class="ts"></div><div class="sv" id="s-f">0</div><div class="sl">Feminino</div></div>
+  </div>
+  <div class="card">
+    <div class="ct">👕 Camisetas</div>
+    <div class="shg">
+      <div class="shb"><div class="shs">PP</div><div class="shc" id="sz-PP">0</div><div class="shp" id="sz-PP-p">0%</div></div>
+      <div class="shb"><div class="shs">P</div><div class="shc" id="sz-P">0</div><div class="shp" id="sz-P-p">0%</div></div>
+      <div class="shb"><div class="shs">M</div><div class="shc" id="sz-M">0</div><div class="shp" id="sz-M-p">0%</div></div>
+      <div class="shb"><div class="shs">G</div><div class="shc" id="sz-G">0</div><div class="shp" id="sz-G-p">0%</div></div>
+      <div class="shb"><div class="shs">GG</div><div class="shc" id="sz-GG">0</div><div class="shp" id="sz-GG-p">0%</div></div>
+      <div class="shb"><div class="shs">XG</div><div class="shc" id="sz-XG">0</div><div class="shp" id="sz-XG-p">0%</div></div>
+    </div>
+  </div>
+  <div class="card"><div class="ct">🏙️ Top Cidades</div><div id="top-cities"><p style="color:var(--mut);font-size:11px">Importe atletas para ver.</p></div></div>
+  <div class="card" id="dash-equipes-card" style="display:none"><div class="ct">🏆 Top Equipes</div><div id="dash-equipes"></div></div>
+  <div class="card">
+    <div class="ct">🎯 Pipeline CRM</div>
+    <div class="cs" onclick="filterByCrm('lead')"><div class="cd" style="background:var(--mut)"></div><div class="cn">Lead</div><div class="cnum" id="crm-lead">0</div></div>
+    <div class="cs" onclick="filterByCrm('inscrito')"><div class="cd" style="background:var(--blu)"></div><div class="cn">Inscrito</div><div class="cnum" id="crm-inscrito">0</div></div>
+    <div class="cs" onclick="filterByCrm('confirmado')"><div class="cd" style="background:var(--gold)"></div><div class="cn">Confirmado</div><div class="cnum" id="crm-confirmado">0</div></div>
+    <div class="cs" onclick="filterByCrm('retirou')"><div class="cd" style="background:var(--grn)"></div><div class="cn">Retirou Kit</div><div class="cnum" id="crm-retirou">0</div></div>
+  </div>
+  <div class="card" style="border-color:rgba(10,122,66,.2)">
+    <div class="ct" style="color:var(--grn)">💰 Financeiro</div>
+    <div id="fin-summary"><p style="color:var(--mut);font-size:11px">Configure o valor da inscrição ao criar o evento.</p></div>
+  </div>
+</div>
+
+<!-- ATLETAS -->
+<div id="page-atletas" class="page">
+  <div class="sh"><div class="sh-icon">👥</div><div><div class="sh-title">Atletas</div><div class="sh-sub">Gerenciar participantes</div></div></div>
+  <div class="sw"><span class="ic">🔍</span><input class="sb" type="text" placeholder="Buscar nome, cidade, equipe, telefone..." id="search-input" oninput="renderParticipants()"></div>
+  <div class="fr">
+    <button class="chip active" onclick="setFilter('todos',this)">Todos</button>
+    <button class="chip" onclick="setFilter('sexo_M',this)">♂ Masc</button>
+    <button class="chip" onclick="setFilter('sexo_F',this)">♀ Fem</button>
+    <button class="chip" onclick="setFilter('tam_PP',this)">PP</button>
+    <button class="chip" onclick="setFilter('tam_P',this)">P</button>
+    <button class="chip" onclick="setFilter('tam_M',this)">M</button>
+    <button class="chip" onclick="setFilter('tam_G',this)">G</button>
+    <button class="chip" onclick="setFilter('tam_GG',this)">GG</button>
+    <button class="chip" onclick="setFilter('tam_XG',this)">XG</button>
+    <button class="chip" onclick="setFilter('sem_cidade',this)">Sem Cidade</button>
+    <button class="chip" onclick="setFilter('inadimplente',this)">⚠️ Não Pago</button>
+    <button class="chip" onclick="setFilter('pago',this)">✅ Pago</button>
+  </div>
+  <div id="participant-list"><div style="text-align:center;padding:40px"><div style="font-size:44px;margin-bottom:8px">👥</div><p style="color:var(--mut)">Selecione um evento para ver atletas.</p></div></div>
+</div>
+
+<!-- IMPORTAR -->
+<div id="page-importar" class="page">
+  <div class="sh"><div class="sh-icon">📥</div><div><div class="sh-title">Importar</div><div class="sh-sub">Planilha de inscritos</div></div></div>
+  <div style="margin-bottom:10px">
+    <button onclick="clearEventParticipants()" class="btn" style="background:transparent;border:1px solid var(--red);color:var(--red);font-size:11px;padding:8px;width:100%">???️ Apagar todos os atletas do evento ativo</button>
+  </div>
+  <div class="ia" id="drop-area" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="this.classList.remove('drag');handleFile({target:{files:event.dataTransfer.files}})">
+    <div style="font-size:36px;margin-bottom:8px">📊</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">Toque para selecionar planilha</div>
+    <div style="font-size:11px;color:var(--mut)">Excel (.xlsx, .xls) ou CSV</div>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(event)">
+  <div id="import-status" style="display:none;text-align:center;padding:16px">
+    <div style="font-size:28px;margin-bottom:6px">⏳</div>
+    <div style="font-size:12px;color:var(--mut)">Lendo planilha...</div>
+  </div>
+  <div id="mapping-card" style="display:none">
+    <div class="card"><div class="ct">🗂️ Mapeamento de Colunas</div><div id="column-mapping"></div></div>
+    <button class="btn btn-p" onclick="confirmCityAndImport()">✅ IMPORTAR AGORA</button>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div id="page-whatsapp" class="page">
+  <div class="sh"><div class="sh-icon">💬</div><div><div class="sh-title">WhatsApp</div><div class="sh-sub">CRM de comunicação</div></div></div>
+
+  <!-- Foto do Evento -->
+  <div class="card" id="wa-event-banner" style="display:none;padding:0;overflow:hidden">
+    <div id="wa-event-cover" style="display:none;position:relative;height:100px;background:var(--gdim)">
+      <img id="wa-cover-img" style="width:100%;height:100px;object-fit:cover" src="">
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent)"></div>
+      <div id="wa-cover-label" style="position:absolute;bottom:10px;left:12px;color:#fff;font-size:13px;font-weight:700"></div>
+    </div>
+    <div id="wa-event-info" style="display:flex;align-items:center;gap:12px;padding:12px"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📐 Régua de Comunicação</div>
+    <div id="regime-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📨 Disparo em Sequência</div>
+    <div style="font-size:11px;color:var(--mut);margin-bottom:12px;line-height:1.5">
+      O app abre cada conversa já com a mensagem pronta. Você só toca <strong>Enviar</strong> e volta — sem precisar digitar nada.
+    </div>
+
+    <!-- Filtro -->
+    <div style="margin-bottom:12px">
+      <div class="ml" style="margin-bottom:6px">👥 Enviar para</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button class="chip bf active" onclick="setFilter('todos',this)">Todos</button>
+        <button class="chip bf" onclick="setFilter('pendente',this)">💰 Pagamento pendente</button>
+        <button class="chip bf" onclick="setFilter('pago',this)">✅ Só pagos</button>
+        <button class="chip bf" onclick="setFilter('semkit',this)">👕 Sem kit</button>
+      </div>
+    </div>
+
+    <!-- Mensagem -->
+    <div class="ml" style="margin-bottom:6px">✏️ Mensagem <span style="color:var(--mut);font-weight:400">(use {nome} {evento} {cidade} {tamanho})</span></div>
+    <textarea id="msg-custom" placeholder="Escreva a mensagem aqui ou use um template da Régua acima..." style="width:100%;padding:10px;background:var(--inp);border:1px solid var(--brd2);border-radius:9px;color:var(--txt);font-family:'Barlow',sans-serif;font-size:12px;height:90px;resize:none;outline:none;margin-bottom:12px;box-sizing:border-box"></textarea>
+
+    <button class="btn btn-p" style="font-size:13px;padding:12px" onclick="prepareBatch()">🚀 INICIAR DISPARO</button>
+
+    <!-- Painel de progresso (aparece após iniciar) -->
+    <div id="batch-panel" style="display:none;margin-top:16px">
+      <!-- Barra de progresso -->
+      <div style="background:var(--brd2);border-radius:99px;height:6px;margin-bottom:10px">
+        <div id="batch-progress-bar" style="background:var(--gold);height:6px;border-radius:99px;transition:width .3s;width:0%"></div>
+      </div>
+      <div id="batch-progress-txt" style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:12px"></div>
+
+      <!-- Card do atleta atual -->
+      <div id="batch-current-card" style="background:var(--inp);border:1px solid var(--brd2);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:10px;color:var(--mut);margin-bottom:6px;font-weight:600;letter-spacing:.5px">PRÓXIMO A ENVIAR</div>
+        <div id="batch-current-name" style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:2px"></div>
+        <div id="batch-current-info" style="font-size:11px;color:var(--mut);margin-bottom:10px"></div>
+        <div id="batch-current-msg" style="font-size:11px;color:var(--txt);background:var(--srf);border-radius:8px;padding:8px;margin-bottom:12px;line-height:1.5;border-left:3px solid var(--gold)"></div>
+        <div style="display:flex;gap:8px">
+          <a id="batch-wa-btn" href="#" target="_blank" onclick="markSentAndNext()" style="flex:1;background:#128C7E;color:#fff;border-radius:9px;padding:11px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;display:block">
+            📲 Abrir no WhatsApp
+          </a>
+          <button onclick="skipCurrent()" style="background:var(--brd2);color:var(--mut);border:none;border-radius:9px;padding:11px 14px;font-size:12px;cursor:pointer;font-family:Barlow,sans-serif">
+            Pular ⏭
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de quem falta -->
+      <div id="batch-remaining" style="font-size:11px;color:var(--mut)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AO VIVO -->
+<div id="page-aovivo" class="page">
+  <div class="sh"><div class="sh-icon">⚡</div><div><div class="sh-title">Ao Vivo</div><div class="sh-sub">Retirada de kit</div></div></div>
+  <div class="sw"><span class="ic">🔍</span><input class="sb" type="text" placeholder="Buscar nome, número ou cidade..." id="live-search" oninput="renderLiveList()"></div>
+  <div class="fr">
+    <button class="chip active" onclick="setLiveFilter('pend',this)">⏳ Pendente</button>
+    <button class="chip" onclick="setLiveFilter('done',this)">✅ Retirado</button>
+    <button class="chip" onclick="setLiveFilter('all',this)">Todos</button>
+  </div>
+  <div style="margin-bottom:10px" id="live-progress"></div>
+  <div id="live-list"></div>
+</div>
+
+<!-- ANÁLISE -->
+<div id="page-analise" class="page">
+  <div class="sh">
+    <div class="sh-icon">📈</div>
+    <div><div class="sh-title">Análise</div><div class="sh-sub">Gráficos do evento</div></div>
+  </div>
+  <div style="display:flex;gap:7px;margin-bottom:12px">
+    <button onclick="exportExcel()" class="btn" style="background:#1B5E20;color:#fff;flex:1;padding:9px;font-size:11px">📊 EXCEL</button>
+    <button onclick="exportPDF()" class="btn btn-r" style="flex:1;padding:9px;font-size:11px">📄 PDF</button>
+  </div>
+  <div class="card">
+    <div class="ct">📊 Inscrições por Percurso</div>
+    <div style="height:160px"><canvas id="chart-percurso"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">👥 <span id="chart-cat-title">Por Categoria de Idade</span></div>
+    <div style="height:160px"><canvas id="chart-cat"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">⚤ Por Sexo</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="height:120px;width:120px;flex-shrink:0"><canvas id="chart-gender"></canvas></div>
+      <div id="chart-gender-legend" style="flex:1;display:flex;flex-direction:column;gap:5px;font-size:12px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">📈 <span id="chart-growth-title">Crescimento de Inscrições</span></div>
+    <div style="height:140px"><canvas id="chart-growth"></canvas></div>
+  </div>
+  <div class="card"><div class="ct">🤖 Insights IA</div>
+    <button class="btn btn-p" onclick="generateInsights()" style="margin-bottom:10px;font-size:11px">✨ GERAR INSIGHTS</button>
+    <div id="insights-area"></div>
+  </div>
+</div>
+
+<!-- GERAL (CONSOLIDADO) -->
+<div id="page-geral" class="page">
+  <div class="sh"><div class="sh-icon">🌐</div><div><div class="sh-title">Geral</div><div class="sh-sub">Todos os eventos</div></div></div>
+  <!-- Export buttons -->
+  <div style="display:flex;gap:7px;margin-bottom:12px">
+    <button onclick="exportGeralExcel()" class="btn" style="background:#1B5E20;color:#fff;flex:1;padding:9px;font-size:11px">📊 EXCEL GERAL</button>
+    <button onclick="exportGeralPDF()" class="btn btn-r" style="flex:1;padding:9px;font-size:11px">📄 PDF GERAL</button>
+  </div>
+  <!-- KPIs consolidados -->
+  <div class="sg" style="grid-template-columns:repeat(2,1fr)">
+    <div class="sc gld"><div class="ts"></div><div class="sv" id="cons-eventos">0</div><div class="sl">Eventos</div></div>
+    <div class="sc blu"><div class="ts"></div><div class="sv" id="cons-atletas">0</div><div class="sl">Atletas</div></div>
+    <div class="sc grn"><div class="ts"></div><div class="sv" id="cons-cidades">0</div><div class="sl">Cidades</div></div>
+    <div class="sc red"><div class="ts"></div><div class="sv" id="cons-receita">0</div><div class="sl">Receita R$</div></div>
+  </div>
+  <!-- Ranking eventos -->
+  <div class="card">
+    <div class="ct">🏆 Ranking de Eventos</div>
+    <div id="cons-ranking"></div>
+  </div>
+  <!-- Top Equipes geral -->
+  <div class="card" id="cons-equipes-card" style="display:none">
+    <div class="ct">🏅 Ranking de Equipes</div>
+    <div id="cons-equipes"></div>
+  </div>
+  <!-- Camisetas consolidado -->
+  <div class="card">
+    <div class="ct">👕 Camisetas — Total Geral</div>
+    <div class="shg">
+      <div class="shb"><div class="shs">PP</div><div class="shc" id="csz-PP">0</div></div>
+      <div class="shb"><div class="shs">P</div><div class="shc" id="csz-P">0</div></div>
+      <div class="shb"><div class="shs">M</div><div class="shc" id="csz-M">0</div></div>
+      <div class="shb"><div class="shs">G</div><div class="shc" id="csz-G">0</div></div>
+      <div class="shb"><div class="shs">GG</div><div class="shc" id="csz-GG">0</div></div>
+      <div class="shb"><div class="shs">XG</div><div class="shc" id="csz-XG">0</div></div>
+    </div>
+  </div>
+  <!-- Gênero consolidado -->
+  <div class="card">
+    <div class="ct">⚤ Gênero Consolidado</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="height:110px;width:110px;flex-shrink:0"><canvas id="chart-cons-gender"></canvas></div>
+      <div id="cons-gender-legend" style="flex:1;display:flex;flex-direction:column;gap:5px;font-size:12px"></div>
+    </div>
+  </div>
+  <!-- Atletas recorrentes -->
+  <div class="card">
+    <div class="ct">🔄 Atletas Recorrentes</div>
+    <div style="margin-bottom:7px;font-size:11px;color:var(--mut)">Participaram de mais de 1 evento</div>
+    <div id="cons-recurrent"><p style="color:var(--mut);font-size:11px;text-align:center;padding:10px">Importe mais eventos para cruzar dados.</p></div>
+  </div>
+  <!-- Financeiro consolidado -->
+  <div class="card" style="border-color:rgba(10,122,66,.2)">
+    <div class="ct" style="color:var(--grn)">💰 Financeiro Consolidado</div>
+    <div id="cons-financeiro"></div>
+  </div>
+</div>
+
+<!-- ── MODALS ── -->
+<!-- New/Edit Event -->
+<div class="mo" id="m-new-ev">
+  <div class="md">
+    <div class="mh" id="m-new-ev-title">Novo Evento</div>
+    <button class="mc" onclick="closeModal('m-new-ev')">✕</button>
+    <div class="mf">
+      <div><div class="ml">Nome do Evento *</div><input class="mi" id="ev-nome" placeholder="Ex: Corrida das Rosas 2025"></div>
+      <div class="mg">
+        <div><div class="ml">Data</div><input class="mi" id="ev-data" type="date"></div>
+        <div><div class="ml">Cidade</div><input class="mi" id="ev-cidade" placeholder="Curitiba"></div>
+      </div>
+      <div>
+        <div class="ml" style="margin-bottom:6px">Modalidade</div>
+        <div class="modal-opts">
+          <button class="modal-opt selected" id="ev-mod-corrida" onclick="toggleModalOpt('ev-mod','corrida')">🏃 Corrida</button>
+          <button class="modal-opt" id="ev-mod-caminhada" onclick="toggleModalOpt('ev-mod','caminhada')">🚶 Caminhada</button>
+          <button class="modal-opt" id="ev-mod-ambas" onclick="toggleModalOpt('ev-mod','ambas')">🏃🚶 Ambas</button>
+        </div>
+      </div>
+      <div>
+        <div class="ml" style="margin-bottom:4px">Distâncias</div>
+        <div class="dist-tags" id="ev-dist-tags"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <select id="ev-dist-sel" class="mi" style="flex:1;padding:7px">
+            <option value="">Adicionar distância...</option>
+          </select>
+          <button onclick="addDistTag('ev')" class="btn btn-b" style="width:44px;padding:7px;font-size:16px">+</button>
+        </div>
+      </div>
+      <div><div class="ml">Valor da Inscrição (R$)</div><input class="mi" id="ev-valor" type="number" placeholder="0.00" step="0.01"></div>
+      <div style="margin-top:8px">
+        <div class="ml" style="margin-bottom:6px">📸 Foto do Evento <span style="color:var(--mut);font-weight:400">(opcional)</span></div>
+        <div id="ev-foto-preview" style="display:none;margin-bottom:8px;border-radius:10px;overflow:hidden;max-height:120px">
+          <img id="ev-foto-img" style="width:100%;height:120px;object-fit:cover;border-radius:10px" src="">
+        </div>
+        <div style="display:flex;gap:6px">
+          <label style="flex:1;background:var(--gdim);border:1px dashed var(--brd2);border-radius:9px;padding:9px;text-align:center;font-size:11px;color:var(--gold);font-weight:700;cursor:pointer;font-family:Barlow,sans-serif">
+            📁 Escolher foto
+            <input type="file" accept="image/*" id="ev-foto-input" style="display:none" onchange="previewEventFoto(this)">
+          </label>
+          <button id="ev-foto-clear" onclick="clearEventFoto()" style="display:none;background:var(--brd2);border:none;border-radius:9px;padding:9px 12px;font-size:11px;color:var(--mut);cursor:pointer;font-family:Barlow,sans-serif">✕ Remover</button>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn btn-p" onclick="salvarEvento()">✅ SALVAR EVENTO</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick event (from import) -->
+<div class="mo" id="m-quick-event">
+  <div class="md">
+    <div class="mh">Criar Evento Rápido</div>
+    <button class="mc" onclick="closeModal('m-quick-event')">✕</button>
+    <div class="mf">
+      <div><div class="ml">Nome do Evento *</div><input class="mi" id="qev-nome" placeholder="Nome do evento"></div>
+      <div class="mg">
+        <div><div class="ml">Data</div><input class="mi" id="qev-data" type="date"></div>
+        <div><div class="ml">Cidade</div><input class="mi" id="qev-cidade" placeholder="Cidade"></div>
+      </div>
+      <div><div class="ml">Valor da Inscrição (R$)</div><input class="mi" id="qev-valor" type="number" placeholder="0.00" step="0.01"></div>
+      <div style="margin-top:6px">
+        <button class="btn btn-p" onclick="criarEventoRapido()">✅ CRIAR E IMPORTAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- City modal -->
+<div class="mo" id="m-city">
+  <div class="md">
+    <div class="mh">Cidade dos Atletas</div>
+    <button class="mc" onclick="closeModal('m-city')">✕</button>
+    <p style="font-size:12px;color:var(--mut);margin-bottom:12px">A planilha não tem coluna de cidade. Informe uma cidade padrão (opcional):</p>
+    <input class="mi" id="city-input" placeholder="Cidade padrão (pode deixar em branco)">
+    <div style="margin-top:10px;display:flex;gap:7px">
+      <button class="btn btn-p" style="flex:1" onclick="doImport(document.getElementById('city-input').value)">✅ IMPORTAR</button>
+      <button class="btn btn-b" style="flex:1" onclick="closeModal('m-city')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="mo" id="m-confirm">
+  <div class="md">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="mh" style="text-align:center;margin-bottom:6px" id="confirm-title">Confirmar</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn btn-r" id="confirm-ok-btn">Confirmar</button>
+      <button class="btn btn-b" onclick="closeModal('m-confirm')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div class="mo" id="m-detail">
+  <div class="md"><div class="mh"></div><button class="mc" onclick="closeModal('m-detail')">✕</button><div id="detail-content"></div></div>
+</div>
+
+<!-- QR modal -->
+<div class="mo" id="m-qr">
+  <div class="md">
+    <div class="mh">QR Code do Kit</div>
+    <button class="mc" onclick="closeModal('m-qr')">✕</button>
+    <canvas id="qr-canvas" width="240" height="240"></canvas>
+    <div id="qr-info" style="text-align:center;margin-bottom:14px"></div>
+    <button class="btn btn-p" onclick="confirmKitByQR()">✅ CONFIRMAR RETIRADA</button>
+  </div>
+</div>
+
+<!-- ── NAVIGATION ── -->
+<nav>
+  <button class="active" onclick="showPage('eventos',this)"><span class="ni">📅</span><span class="nl">Eventos</span></button>
+  <button onclick="showPage('dashboard',this);updateDashboard()"><span class="ni">📊</span><span class="nl">Painel</span></button>
+  <button onclick="showPage('atletas',this);renderParticipants()"><span class="ni">👥</span><span class="nl">Atletas</span></button>
+  <button onclick="showPage('importar',this)"><span class="ni">📥</span><span class="nl">Importar</span></button>
+  <button onclick="showPage('whatsapp',this)"><span class="ni">💬</span><span class="nl">WA</span></button>
+  <button onclick="showPage('aovivo',this);renderLiveList()"><span class="ni">⚡</span><span class="nl">Ao Vivo</span></button>
+  <button onclick="showPage('analise',this);renderCharts()"><span class="ni">📈</span><span class="nl">Análise</span></button>
+  <button onclick="showPage('geral',this);renderGeral()"><span class="ni">🌐</span><span class="nl">Geral</span></button>
+</nav>
+
+<script>
+// ── FIREBASE CONFIG ──
+var firebaseConfig = {
+  apiKey: "AIzaSyAucqhubErSvwrVyWbh6g-ny5J8wM0Kkc0",
+  authDomain: "fera-esportes.firebaseapp.com",
+  projectId: "fera-esportes",
+  storageBucket: "fera-esportes.firebasestorage.app",
+  messagingSenderId: "139199912203",
+  appId: "1:139199912203:web:845da3ad969ff0fd622a0e"
+};
+var _db = null;
+var _storage = null;
+var _FBDOC = 'fera_v5';
+try{
+  firebase.initializeApp(firebaseConfig);
+  _db = firebase.firestore();
+  _storage = firebase.storage();
+}catch(e){console.warn('Firebase init error:',e);}
+
+// ── DATA ──
+var db={events:{},activeEventId:null,eventMetas:{}};
+var _lsOk=false;
+var _pendingFile=null;
+var _editingEvId=null;
+var _fbReady=false;
+var _fbSaveTimer=null;
+
+// Load localStorage immediately (fast start / offline)
+try{localStorage.setItem('_t','1');localStorage.removeItem('_t');_lsOk=true;}catch(e){}
+if(_lsOk){try{var _s=localStorage.getItem('fera_v5');if(_s)db=JSON.parse(_s);}catch(e){}}
+if(!db.eventMetas)db.eventMetas={};
+
+// Firebase: load authoritative data
+function _fbLoad(){
+  if(!_db){_fbReady=true;_showSyncStatus('⚠️ Modo offline','#CC8800');return;}
+  _db.collection('data').doc(_FBDOC).get().then(function(doc){
+    if(doc.exists){
+      var data=doc.data();
+      if(data&&data.db){
+        try{
+          var fbDb=JSON.parse(data.db);
+          var fbTs=data.updatedAt||0;
+          var lsTs=db._updatedAt||0;
+          if(fbTs>=lsTs||!Object.keys(db.events||{}).length){
+            db=fbDb;
+            if(!db.eventMetas)db.eventMetas={};
+            if(_lsOk)localStorage.setItem('fera_v5',JSON.stringify(db));
+            _doRefresh();
+            _showSyncStatus('\u2601\uFE0F Dados sincronizados','#0A7A42');
+          }
+        }catch(e){console.warn('FB parse error',e);}
+      }
+    }
+    _fbReady=true;
+  }).catch(function(e){
+    console.warn('Firebase load error:',e);
+    _fbReady=true;
+    _showSyncStatus('\u26A0\uFE0F Modo offline','#CC8800');
+  });
+}
+function _fbSave(){
+  if(!_fbReady){setTimeout(_fbSave,500);return;}
+  if(_fbSaveTimer)clearTimeout(_fbSaveTimer);
+  _fbSaveTimer=setTimeout(function(){
+    db._updatedAt=Date.now();
+    if(_lsOk)localStorage.setItem('fera_v5',JSON.stringify(db));
+    if(!_db){_showSyncStatus('⚠️ Salvo só localmente','#CC8800');return;}
+    _db.collection('data').doc(_FBDOC).set({
+      db:JSON.stringify(db),
+      updatedAt:db._updatedAt
+    }).then(function(){
+      _showSyncStatus('\u2601\uFE0F Salvo na nuvem','#0A7A42');
+    }).catch(function(e){
+      console.warn('FB save error:',e);
+      _showSyncStatus('\u26A0\uFE0F Salvo s\u00F3 localmente','#CC8800');
+    });
+  },1200);
+}
+function _showSyncStatus(msg,color){
+  var s=document.getElementById('sync-status');
+  if(!s)return;
+  s.textContent=msg;s.style.color=color;s.style.opacity='1';
+  setTimeout(function(){s.style.opacity='0';},3000);
+}
+setTimeout(_fbLoad,200);
+
+
+  // iOS Safari roundRect polyfill
+  if(!CanvasRenderingContext2D.prototype.roundRect){
+    CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+      if(w<2*r)r=w/2;if(h<2*r)r=h/2;
+      this.beginPath();this.moveTo(x+r,y);
+      this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);
+      this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();
+      return this;
+    };
+  }
+
+  function save(){
+  if(_lsOk){try{localStorage.setItem('fera_v5',JSON.stringify(db));}catch(e){}}
+  _fbSave();
+  _scheduleRefresh();
+}
+var _refreshTimer=null;
+function _scheduleRefresh(){
+  if(_refreshTimer)clearTimeout(_refreshTimer);
+  _refreshTimer=setTimeout(_doRefresh,80);
+}
+function _doRefresh(){
+  updateHeader();renderEvents();updateDashboard();
+  var pg=document.querySelector('.page.active');
+  var pid=pg?pg.id:'';
+  if(pid==='page-atletas')renderParticipants();
+  else if(pid==='page-aovivo')renderLiveList();
+  else if(pid==='page-analise')renderCharts();
+  else if(pid==='page-whatsapp')renderRegime();
+  else if(pid==='page-geral')renderGeral();
+}
+
+function getEv(){return db.activeEventId?db.events[db.activeEventId]:null;}
+function getPts(){var ev=getEv();return ev?ev.participants||[]:[]}
+function setPts(l){var ev=getEv();if(ev)ev.participants=l;}
+function el(id){return document.getElementById(id);}
+
+var importedHeaders=[],importedRows=[];
+var curFilter='todos';
+var batchSz=10,batchIdx=0,batchTargets=[],batchFilter='todos';
+var charts={};
+var liveFilter='pend';
+var qrAthleteId=null;
+
+// ── COMMUNICATION REGIME ──
+var REGIME=[
+  {id:'d7',day:'D-7',label:'7 dias antes \u2014 Lembrete',msg:'\uD83E\uDD81 {nome}, faltam 7 dias para a {evento} em {cidade}! Prepare-se e boa corrida! \uD83C\uDFC3\u200D\u2642\uFE0F',on:true},
+  {id:'d3',day:'D-3',label:'3 dias \u2014 Kit dispon\u00EDvel',msg:'\uD83D\uDC55 {nome}, seu kit tamanho {tamanho} est\u00E1 dispon\u00EDvel para retirada! N\u00E3o deixe para \u00FAltima hora \u2014 Fera Esportes \uD83E\uDD81\uD83C\uDFBD',on:true},
+  {id:'d1',day:'D-1',label:'1 dia antes \u2014 Confirma\u00E7\u00E3o',msg:'\uD83D\uDD14 {nome}, amanh\u00E3 \u00E9 o grande dia! Confirme seu kit. Boa corrida! \uD83C\uDFC6',on:true},
+  {id:'dp1',day:'D+1',label:'P\u00F3s-corrida \u2014 Parab\u00E9ns',msg:'\uD83C\uDFC6 {nome}, parab\u00E9ns pela {evento}! Foi incrivel te ver na linha de chegada. Nos vemos na pr\u00F3xima! \uD83E\uDD81',on:true},
+  {id:'nps',day:'NPS',label:'NPS \u2014 Pesquisa',msg:'\u2B50 {nome}, o que voc\u00EA achou da {evento}? Sua opini\u00E3o \u00E9 muito importante pra n\u00F3s! Responda de 1 a 10.',on:false},
+  {id:'cob',day:'COB',label:'Cobran\u00E7a \u2014 Pagamento Pendente',msg:'\u26A0\uFE0F {nome}, identificamos que sua inscri\u00E7\u00E3o na {evento} ainda est\u00E1 pendente de pagamento. Para garantir sua vaga e retirada do kit, regularize o quanto antes. D\u00FAvidas? Fale conosco! \uD83E\uDD81 Fera Esportes',on:false},
+  {id:'livre',day:'LIVRE',label:'Mensagem Livre \u2014 Personalize',msg:'Ol\u00E1 {nome}! Aqui \u00E9 a Fera Esportes \uD83E\uDD81. {evento} \u2014 {cidade}. Qualquer d\u00FAvida estamos \u00E0 disposi\u00E7\u00E3o!',on:false}
+];
+
+// ── HELPERS ──
+function toast(msg,dur){
+  var t=el('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},(dur||2200));
+}
+function fmtMoney(v){
+  var n=parseFloat(v)||0;
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtDate(d){
+  if(!d)return'';
+  var p=d.split('-');
+  if(p.length===3)return p[2]+'/'+p[1]+'/'+p[0];
+  return d;
+}
+function feraConfirm(icon,title,msg,onOk){
+  el('confirm-icon').textContent=icon;
+  el('confirm-title').textContent=title;
+  el('confirm-msg').textContent=msg;
+  el('confirm-ok-btn').onclick=function(){closeModal('m-confirm');onOk();};
+  openModal('m-confirm');
+}
+function openModal(id){el(id).classList.add('open');}
+function closeModal(id){el(id).classList.remove('open');}
+function showPage(p,btn){
+  document.querySelectorAll('.page').forEach(function(pg){pg.classList.remove('active');});
+  el('page-'+p).classList.add('active');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+}
+function animN(id,target){
+  var e=el(id);if(!e)return;
+  var cur=0,step=Math.max(1,Math.ceil(target/20));
+  var iv=setInterval(function(){cur=Math.min(cur+step,target);e.textContent=cur;if(cur>=target)clearInterval(iv);},40);
+}
+
+// ── NORMALIZERS ──
+function normSz(v){
+  if(!v)return'';
+  var raw=String(v).trim().toUpperCase();
+  if(!raw)return'';
+  // Skip header/junk
+  if(raw==='TAMANHO'||raw==='TAMANHO CAMISETA'||raw==='CAMISETA'||raw==='SIZE'||raw==='TAM')return'';
+  // No shirt
+  if(raw==='SEM'||raw==='SEM KIT'||raw==='SEM CAMISETA'||raw.startsWith('SEM K')||raw==='NAO'||raw==='N/A'||raw==='-'||raw==='0'||raw==='NAO TEM')return'';
+  // Strip prefix: "CAMISETA(S) " or "CAMISA "
+  raw=raw.replace(/^CAMISETAS?\s*:?\s*/,'').replace(/^CAMISA\s*:?\s*/,'').trim();
+  if(!raw)return'';
+  // "PP ou P" / "P ou PP" → first token
+  var ouMatch=raw.match(/^(PP|GG|XG|[PMGP])\s+OU\s+/i);
+  if(ouMatch)return ouMatch[1];
+  // "G (Não garantimos...)" / "M (detalhes)" — size followed by space/paren
+  var parenMatch=raw.match(/^(PP|GG|XG|[PMGP])\s*[\(\[]/);
+  if(parenMatch)return parenMatch[1];
+  // "M CORTESIA" / "G FEMININO" / "P EXTRA" — size followed by space+word
+  var sufMatch=raw.match(/^(PP|GG|XG|[PMGP])\s+[A-Z]/);
+  if(sufMatch)return sufMatch[1];
+  // Direct exact match
+  if(raw==='PP'||raw==='P'||raw==='M'||raw==='G'||raw==='GG'||raw==='XG')return raw;
+  // Generic: first token is a size
+  var m=raw.match(/^(PP|GG|XG|[PMGP])(?:\s|$|[^A-Z0-9])/);
+  if(m)return m[1];
+  // Full word
+  var m2=raw.match(/^([A-Z]+)/);
+  if(m2){
+    var t=m2[1];
+    if(t==='PP'||t==='P'||t==='M'||t==='G'||t==='GG'||t==='XG')return t;
+    var wm={'EXTRAGRANDE':'XG','EXTRA':'XG','XXGRANDE':'XG','GGGRANDE':'XG','GRANDE':'G','MEDIO':'M','MEDIA':'M','PEQUENO':'P','PEQUENA':'P','PEQEUNO':'P','MEIDO':'M'};
+    if(wm[t])return wm[t];
+  }
+  // Numeric
+  var num={'34':'PP','36':'PP','38':'P','40':'P','42':'M','44':'M','46':'G','48':'G','50':'GG','52':'GG','54':'XG','56':'XG'};
+  return num[raw.replace(/\D/g,'')]||'';
+}
+function normPhone(v){
+  if(!v)return'';
+  var s=String(v).trim().replace(/\.0+$/,'');
+  var d=s.replace(/\D/g,'');
+  return d.length>=8?d:s;
+}
+function normGndr(v){
+  if(!v)return'M';
+  var l=String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return(l[0]==='f'||l.includes('fem'))?'F':'M';
+}
+function normStatus(v){
+  if(!v)return'inscrito';
+  var l=String(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(l.includes('retir')||l.includes('kit'))return'retirou';
+  if(l.includes('confirm'))return'confirmado';
+  if(l.includes('lead'))return'lead';
+  return'inscrito';
+}
+function normDate(v){
+  if(!v)return'';
+  var s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.substring(0,10);
+  var yo=s.replace(/\.0+$/,'');
+  if(/^\d{4}$/.test(yo)){var y=parseInt(yo);if(y>1920&&y<2020)return yo+'-01-01';}
+  var br=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(br)return br[3]+'-'+br[2].padStart(2,'0')+'-'+br[1].padStart(2,'0');
+  var sp=s.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/);
+  if(sp)return sp[3]+'-'+sp[2].padStart(2,'0')+'-'+sp[1].padStart(2,'0');
+  var excel=parseInt(s);
+  if(excel>40000&&excel<50000){
+    var d=new Date((excel-25569)*86400*1000);
+    return d.toISOString().substring(0,10);
+  }
+  return'';
+}
+function calcCat(nasc,sexo){
+  if(!nasc)return'';
+  var yr=parseInt((nasc||'').split('-')[0]);
+  if(!yr)return'';
+  var age=new Date().getFullYear()-yr;
+  var s=sexo==='F'?'F':'M';
+  if(age<18)return'Sub-18 '+s;
+  if(age<30)return'18-29 '+s;
+  if(age<40)return'30-39 '+s;
+  if(age<50)return'40-49 '+s;
+  if(age<60)return'50-59 '+s;
+  return'60+ '+s;
+}
+
+// ── EVENTS ──
+function updateHeader(){
+  var ev=getEv();
+  el('hev-name').textContent=ev?ev.nome:'Nenhum evento ativo';
+}
+// ── SYNC COM FERAESPORTES.COM.BR ──
+var FERA_BASE = 'https://www.feraesportes.com.br';
+var FERA_CF_WORKER = 'https://broad-glade-50f6.vitorreist.workers.dev';
+
+// Eventos hardcoded do site (fallback quando proxy falhar)
+var SITE_EVENTS_CACHE = [
+  {siteId:'41', nome:'1ª CORRIDA E CAMINHADA DAS NAÇÕES – SPDC PARANAVAI', data:'2026-03-22',
+   fotoUrl:'https://www.feraesportes.com.br/assets/img/img_eventos/41/WhatsApp%20Image%202026-02-19%20at%2021.41.33.jpeg',
+   cidade:'Paranavai - PR', siteUrl:'https://www.feraesportes.com.br/evento.php?id=41'},
+  {siteId:'43', nome:'2ª NIGHT RUN 5K - JOIA RARA - TAPEJARA - PR', data:'2026-04-04',
+   fotoUrl:'https://www.feraesportes.com.br/assets/img/img_eventos/43/NIGHT%20RUN%20-%20JPEG.jpg.jpeg',
+   cidade:'Tapejara - PR', siteUrl:'https://www.feraesportes.com.br/evento.php?id=43'},
+  {siteId:'40', nome:'2ª NIGHT RUN LOANDA - AMIGOS QUE CORREM', data:'2026-04-11',
+   fotoUrl:'https://www.feraesportes.com.br/assets/img/img_eventos/40/WhatsApp%20Image%202026-02-18%20at%2015.04.58.jpeg',
+   cidade:'Loanda - PR', siteUrl:'https://www.feraesportes.com.br/evento.php?id=40'},
+  {siteId:'44', nome:'CORRIDA NOTURNA CENTENÁRIO VENCESLAU - D3 ENERGY RUN', data:'2026-04-11',
+   fotoUrl:'https://www.feraesportes.com.br/assets/img/img_eventos/44/Corrida Noturna Venceslau.png',
+   cidade:'Presidente Venceslau - SP', siteUrl:'https://www.feraesportes.com.br/evento.php?id=44'},
+  {siteId:'42', nome:'4ª CORRIDA SOLIDÁRIA - CIANORTE', data:'2026-05-24',
+   fotoUrl:'https://www.feraesportes.com.br/assets/img/img_eventos/42/WhatsApp%20Image%202026-02-26%20at%2010.39.03.jpeg',
+   cidade:'Cianorte - PR', siteUrl:'https://www.feraesportes.com.br/evento.php?id=42'}
+];
+var _syncing = false;
+
+function syncSiteEvents(){
+  if(_syncing){toast('\u23F3 Sincronizando...');return;}
+  _syncing = true;
+  var btn = el('btn-sync-site');
+  var icon = el('sync-site-icon');
+  var txt = el('sync-site-txt');
+  if(icon) icon.textContent = '\u23F3';
+  if(txt) txt.textContent = 'Buscando eventos...';
+  if(btn) btn.style.opacity = '0.7';
+
+  // Try multiple CORS proxies in sequence
+  // Cloudflare Worker proxy (principal)
+  var CF_WORKER = typeof FERA_CF_WORKER !== 'undefined' ? FERA_CF_WORKER : null;
+  var proxies = [];
+  if(CF_WORKER) proxies.push(CF_WORKER + '/?url=' + encodeURIComponent(FERA_BASE + '/'));
+  proxies = proxies.concat([
+    'https://api.allorigins.win/get?url=' + encodeURIComponent(FERA_BASE + '/'),
+    'https://corsproxy.io/?' + encodeURIComponent(FERA_BASE + '/'),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(FERA_BASE + '/')
+  ]);
+  var _proxyIdx = 0;
+
+  function _tryProxy(){
+    if(_proxyIdx >= proxies.length){ _syncFallback(); return; }
+    var url = proxies[_proxyIdx++];
+    fetch(url)
+      .then(function(r){ return r.json().catch(function(){ return r.text().then(function(t){return {contents:t};}); }); })
+      .then(function(data){
+        var html = data.contents || data || '';
+        if(typeof html !== 'string') html = JSON.stringify(html);
+      var events = _parseSiteEvents(html);
+        if(!events.length){ _tryProxy(); return; }
+        var added = 0;
+        var existingIds = Object.values(db.events).map(function(ev){return ev.siteId;}).filter(Boolean);
+        events.forEach(function(ev){
+          if(existingIds.indexOf(ev.siteId) !== -1) return;
+          var id = 'ev_site_' + ev.siteId + '_' + Date.now();
+          db.events[id] = {
+            id:id, siteId:ev.siteId, nome:ev.nome, data:ev.data,
+            cidade:ev.cidade||'', foto:ev.foto||null, fotoUrl:ev.fotoUrl||null,
+            siteUrl:ev.siteUrl, modalidade:'corrida', distancias:[],
+            valor:0, participants:[], createdAt:new Date().toISOString(), syncedAt:new Date().toISOString()
+          };
+          added++;
+        });
+        if(added > 0){
+          if(!db.activeEventId){
+            var newEvs=Object.values(db.events).filter(function(e){return e.siteId;});
+            if(newEvs.length) db.activeEventId=newEvs[0].id;
+          }
+          save();
+          toast('\u2705 ' + added + ' evento(s) importado(s) do site!');
+        } else {
+          toast('\u2714 Tudo atualizado! Nenhum evento novo.');
+        }
+        _syncDone();
+      })
+      .catch(function(e){
+        console.warn('Sync error proxy '+_proxyIdx+':', e);
+        _tryProxy();
+      });
+  }
+  _tryProxy();
+}
+
+function _syncFallback(){
+  // Use hardcoded cache as fallback
+  var added = 0;
+  var existingIds = Object.values(db.events).map(function(ev){return ev.siteId;}).filter(Boolean);
+  SITE_EVENTS_CACHE.forEach(function(ev){
+    if(existingIds.indexOf(ev.siteId) !== -1) return;
+    var id = 'ev_site_' + ev.siteId + '_' + Date.now();
+    db.events[id] = {
+      id:id, siteId:ev.siteId, nome:ev.nome, data:ev.data,
+      cidade:ev.cidade||'', foto:ev.fotoUrl||null, fotoUrl:ev.fotoUrl||null,
+      siteUrl:ev.siteUrl, modalidade:'corrida', distancias:[],
+      valor:0, participants:[], createdAt:new Date().toISOString(), syncedAt:new Date().toISOString()
+    };
+    added++;
+  });
+  if(added > 0){ save(); toast('\u2705 ' + added + ' evento(s) importado(s)!'); }
+  else toast('\u2714 Tudo atualizado! Nenhum evento novo.');
+  _syncDone();
+}
+
+function _parseSiteEvents(html){
+  var events = [];
+  // Parse event blocks — pattern: evento.php?id=XX
+  var idPattern = /evento\.php\?id=(\d+)/g;
+  var ids = [];
+  var m;
+  while((m = idPattern.exec(html)) !== null){
+    var sid = m[1];
+    if(ids.indexOf(sid) === -1) ids.push(sid);
+  }
+
+  ids.forEach(function(sid){
+    // Extract block around this event ID
+    var blockStart = html.indexOf('evento.php?id=' + sid);
+    if(blockStart === -1) return;
+    // Go back ~800 chars to find the image
+    var blockSearch = html.substring(Math.max(0, blockStart - 800), blockStart + 400);
+    
+    // Extract photo URL
+    var imgMatch = blockSearch.match(/src=["']([^"']*img_eventos[^"']+)["']/);
+    var rawFoto = imgMatch ? (imgMatch[1].startsWith('http') ? imgMatch[1] : FERA_BASE + '/' + imgMatch[1].replace(/^\//, '')) : null;
+    // Encode spaces and special chars in filename
+    var fotoUrl = rawFoto ? rawFoto.split('/').map(function(seg,i){ return i < 3 ? seg : encodeURIComponent(decodeURIComponent(seg)); }).join('/') : null;
+    
+    // Extract name from h4
+    var nameMatch = blockSearch.match(/<h4[^>]*>([^<]+)<\/h4>/);
+    // Also try strong/b tags or heading patterns
+    if(!nameMatch) nameMatch = blockSearch.match(/####\s*([^\n]+)/);
+    var nome = nameMatch ? nameMatch[1].trim() : 'Evento ' + sid;
+    // Clean up HTML entities
+    nome = nome.replace(/&amp;/g,'&').replace(/&ndash;/g,'–').replace(/&#[0-9]+;/g,'').replace(/<[^>]+>/g,'').trim();
+    
+    // Extract date
+    var dateMatch = blockSearch.match(/Dia do evento[^:]*:\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/);
+    var dataStr = '';
+    if(dateMatch){
+      var parts = dateMatch[1].split('/');
+      if(parts.length === 3) dataStr = parts[2] + '-' + parts[1] + '-' + parts[0]; // YYYY-MM-DD
+    }
+
+    if(nome && nome !== 'Evento ' + sid){
+      events.push({
+        siteId: sid,
+        nome: nome,
+        data: dataStr,
+        fotoUrl: fotoUrl,
+        foto: fotoUrl, // use URL directly as foto
+        cidade: '',
+        siteUrl: FERA_BASE + '/evento.php?id=' + sid
+      });
+    }
+  });
+
+  return events;
+}
+
+function _syncDone(){
+  _syncing = false;
+  var icon = el('sync-site-icon');
+  var txt = el('sync-site-txt');
+  var btn = el('btn-sync-site');
+  if(icon) icon.textContent = '\uD83D\uDD04';
+  if(txt) txt.textContent = 'SINCRONIZAR COM FERAESPORTES.COM.BR';
+  if(btn) btn.style.opacity = '1';
+  renderEvents();
+}
+
+function renderEvents(){
+  var evs=Object.values(db.events).sort(function(a,b){return(b.createdAt||'').localeCompare(a.createdAt||'');});
+  var cnt=el('ev-count');
+  if(cnt)cnt.textContent=evs.length?evs.length+' evento'+(evs.length>1?'s':''):'Nenhum evento';
+  var lst=el('ev-list');if(!lst)return;
+  if(!evs.length){lst.innerHTML='<div style="text-align:center;padding:40px 0"><div style="font-size:48px;margin-bottom:10px">📅</div><p style="color:var(--mut);font-size:13px">Nenhum evento criado.<br>Toque em + para criar.</p></div>';return;}
+  lst.innerHTML=evs.map(function(ev){
+    var pts=ev.participants||[];
+    var isActive=db.activeEventId===ev.id;
+    var fotoSrc=ev.foto||ev.fotoUrl||null;
+    var coverHtml=fotoSrc
+      ?'<div style="position:relative;width:100%;height:140px;border-radius:10px 10px 0 0;overflow:hidden;background:#111">'
+        +'<img src="'+fotoSrc+'" style="width:100%;height:100%;object-fit:cover;display:block" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">'
+        +(isActive?'<div style="position:absolute;top:8px;right:8px;background:#B8860B;color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:1px">ATIVO</div>':'')
+        +'<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.75));padding:10px 12px 8px">'
+        +'<div style="color:#fff;font-size:13px;font-weight:800;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.8)">'+ev.nome+'</div>'
+        +(ev.data?'<div style="color:rgba(255,255,255,0.85);font-size:11px;margin-top:2px">📅 '+fmtDate(ev.data)+'</div>':'')
+        +'</div></div>'
+      :'<div style="background:linear-gradient(135deg,#1a1a1a,#2d2d2d);border-radius:10px 10px 0 0;padding:18px 14px 14px;position:relative">'
+        +(isActive?'<div style="position:absolute;top:8px;right:8px;background:#B8860B;color:#fff;font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;letter-spacing:1px">ATIVO</div>':'')
+        +'<div style="font-size:32px;margin-bottom:6px">📅</div>'
+        +'<div style="color:#fff;font-size:13px;font-weight:800">'+ev.nome+'</div>'
+        +(ev.data?'<div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:3px">📅 '+fmtDate(ev.data)+'</div>':'')
+        +'</div>';
+    return '<div class="ev-card'+(isActive?' active-ev':'')+'" style="padding:0;overflow:hidden">'
+      +coverHtml
+      +'<div style="padding:10px 12px 4px">'
+      +'<div class="ev-meta" style="margin-top:2px">'
+      +(ev.cidade?'<span>📍 '+ev.cidade+'</span>':'')
+      +(ev.siteId?'<span>🌐 Site #'+ev.siteId+'</span>':'')
+      +'<span>👥 '+pts.length+' atletas</span>'
+      +(ev.valor?'<span>💰 R$ '+fmtMoney(ev.valor)+'</span>':'')
+      +'</div></div>'
+      +'<div class="ev-actions" style="padding:0 10px 10px;gap:6px">'
+      +(isActive
+        ?'<button class="btn btn-b" style="flex:1;padding:7px;font-size:11px" onclick="desativarEvento(event)">✕ Desativar</button>'
+        :'<button class="btn btn-p" style="flex:1;padding:7px;font-size:11px" onclick="selecionarEvento(\''+ev.id+'\',event)">▶ Selecionar</button>')
+      +'<button class="btn btn-b" style="flex:1;padding:7px;font-size:11px" onclick="editarEvento(\''+ev.id+'\',event)">✏️ Editar</button>'
+      +'<button class="btn btn-r" style="flex:0 0 44px;padding:7px;font-size:11px" onclick="deletarEvento(\''+ev.id+'\',event)">🗑️</button>'
+      +'</div></div>';
+  }).join('');
+}
+function selecionarEvento(id,e){
+  if(e)e.stopPropagation();
+  db.activeEventId=id;save();
+  toast('\uD83C\uDFC6 Evento ativado!');
+  showPage('dashboard',document.querySelectorAll('nav button')[1]);
+  updateDashboard();
+}
+function desativarEvento(e){
+  if(e)e.stopPropagation();
+  db.activeEventId=null;save();toast('\u2705 Evento desativado.');
+}
+function editarEvento(id,e){
+  if(e)e.stopPropagation();
+  _editingEvId=id;
+  var ev=db.events[id];if(!ev)return;
+  el('m-new-ev-title').textContent='Editar Evento';
+  el('ev-nome').value=ev.nome||'';
+  el('ev-data').value=ev.data||'';
+  el('ev-cidade').value=ev.cidade||'';
+  el('ev-valor').value=ev.valor||'';
+  // populate photo preview
+  window._pendingFoto=ev.foto||null;window._clearFoto=false;
+  var imgEl=el('ev-foto-img');var prev=el('ev-foto-preview');var clr=el('ev-foto-clear');
+  if(ev.foto){if(imgEl)imgEl.src=ev.foto;if(prev)prev.style.display='block';if(clr)clr.style.display='block';}
+  else{if(prev)prev.style.display='none';if(clr)clr.style.display='none';}
+  if(ev.modalidade)toggleModalOpt('ev-mod',ev.modalidade);
+  // restore distances
+  if(!db.events[id]._dists)db.events[id]._dists=ev.distancias||[];
+  _renderDistTags('ev',db.events[id]._dists||[]);
+  openModal('m-new-ev');
+}
+function deletarEvento(id,e){
+  if(e)e.stopPropagation();
+  var ev=db.events[id];if(!ev)return;
+  feraConfirm('\uD83D\uDDD1\uFE0F','Excluir Evento','Tem certeza que deseja excluir "'+ev.nome+'"? Todos os atletas serão perdidos.',function(){
+    if(db.activeEventId===id)db.activeEventId=null;
+    delete db.events[id];save();toast('\uD83D\uDDD1\uFE0F Evento exclu\u00EDdo!');
+  });
+}
+
+// ── DIST TAGS ──
+var _distLists={};
+function _renderDistTags(prefix,tags){
+  _distLists[prefix]=tags||[];
+  var c=el(prefix+'-dist-tags');if(!c)return;
+  c.innerHTML=_distLists[prefix].map(function(d){
+    return '<div class="dist-tag">'+d+'<button onclick="removeDistTag(\''+prefix+'\',\''+d+'\')">✕</button></div>';
+  }).join('');
+}
+function addDistTag(prefix){
+  var sel=el(prefix+'-dist-sel');if(!sel||!sel.value)return;
+  var v=sel.value;
+  if(!_distLists[prefix])_distLists[prefix]=[];
+  if(!_distLists[prefix].includes(v)){
+    _distLists[prefix].push(v);
+    _renderDistTags(prefix,_distLists[prefix]);
+  }
+  sel.value='';
+}
+function removeDistTag(prefix,v){
+  if(!_distLists[prefix])return;
+  _distLists[prefix]=_distLists[prefix].filter(function(d){return d!==v;});
+  _renderDistTags(prefix,_distLists[prefix]);
+}
+function toggleModalOpt(prefix,val){
+  document.querySelectorAll('[id^="'+prefix+'-"]').forEach(function(b){b.classList.remove('selected');});
+  var btn=el(prefix+'-'+val);if(btn)btn.classList.add('selected');
+}
+function resetEventForm(prefix){
+  if(el(prefix+'-nome'))el(prefix+'-nome').value='';
+  if(el(prefix+'-data'))el(prefix+'-data').value='';
+  if(el(prefix+'-cidade'))el(prefix+'-cidade').value='';
+  if(el(prefix+'-valor'))el(prefix+'-valor').value='';
+  if(prefix==='ev'){
+    toggleModalOpt('ev-mod','corrida');
+    _distLists['ev']=[];
+    _renderDistTags('ev',[]);
+  }
+}
+function previewEventFoto(input){
+  if(!input.files||!input.files[0])return;
+  var file=input.files[0];
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var imgEl=el('ev-foto-img');
+    var prev=el('ev-foto-preview');
+    var clr=el('ev-foto-clear');
+    if(imgEl)imgEl.src=e.target.result;
+    if(prev)prev.style.display='block';
+    if(clr)clr.style.display='block';
+    // store temporarily
+    window._pendingFoto=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearEventFoto(){
+  window._pendingFoto=null;
+  var imgEl=el('ev-foto-img');
+  var prev=el('ev-foto-preview');
+  var clr=el('ev-foto-clear');
+  var inp=el('ev-foto-input');
+  if(imgEl)imgEl.src='';
+  if(prev)prev.style.display='none';
+  if(clr)clr.style.display='none';
+  if(inp)inp.value='';
+}
+function salvarEvento(){
+  var nome=el('ev-nome').value.trim();
+  if(!nome){toast('\u26A0\uFE0F Informe o nome do evento!');return;}
+  var modalSel=document.querySelector('#m-new-ev .modal-opt.selected');
+  var modalidade=modalSel?modalSel.id.replace('ev-mod-',''):'corrida';
+  var foto=window._pendingFoto||null;
+  if(_editingEvId){
+    var ev=db.events[_editingEvId];
+    ev.nome=nome;ev.data=el('ev-data').value;ev.cidade=el('ev-cidade').value.trim();
+    ev.valor=parseFloat(el('ev-valor').value)||0;
+    ev.modalidade=modalidade;ev.distancias=_distLists['ev']||[];
+    if(foto)ev.foto=foto;
+    else if(window._clearFoto)ev.foto=null;
+    _editingEvId=null;window._pendingFoto=null;window._clearFoto=false;
+    closeModal('m-new-ev');save();toast('\u2705 Evento atualizado!');
+  }else{
+    var id='ev_'+Date.now();
+    db.events[id]={id:id,nome:nome,data:el('ev-data').value,cidade:el('ev-cidade').value.trim(),
+      valor:parseFloat(el('ev-valor').value)||0,modalidade:modalidade,distancias:_distLists['ev']||[],
+      foto:foto||null,participants:[],createdAt:new Date().toISOString()};
+    db.activeEventId=id;
+    window._pendingFoto=null;
+    closeModal('m-new-ev');resetEventForm('ev');save();
+    toast('\uD83C\uDFC6 Evento criado e ativado!');
+    showPage('dashboard',document.querySelectorAll('nav button')[1]);
+    updateDashboard();
+  }
+}
+function criarEventoRapido(){
+  var nome=el('qev-nome').value.trim();
+  if(!nome){toast('\u26A0\uFE0F Informe o nome!');return;}
+  var id='ev_'+Date.now();
+  db.events[id]={id:id,nome:nome,data:el('qev-data').value,cidade:el('qev-cidade').value.trim(),
+    valor:parseFloat(el('qev-valor').value)||0,modalidade:'corrida',distancias:[],
+    participants:[],createdAt:new Date().toISOString()};
+  db.activeEventId=id;
+  closeModal('m-quick-event');resetEventForm('qev');save();
+  if(_pendingFile){handleFile({target:{files:[_pendingFile]}});_pendingFile=null;}
+  else toast('\uD83C\uDFC6 Evento criado!');
+}
+
+// ── IMPORT ──
+function handleFile(ev){
+  var file=ev.target.files[0];if(!file)return;
+  if(!db.activeEventId){
+    _pendingFile=file;
+    // auto-fill name from filename
+    var suggested=file.name.replace(/\.[^.]+$/,'').replace(/[_\-]/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+    if(el('qev-nome'))el('qev-nome').value=suggested;
+    var today=new Date().toISOString().split('T')[0];
+    if(el('qev-data'))el('qev-data').value=today;
+    openModal('m-quick-event');
+    return;
+  }
+  el('import-status').style.display='block';
+  el('mapping-card').style.display='none';
+  var ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    var reader=new FileReader();
+    reader.onload=function(e){parseCSV(e.target.result);};
+    reader.readAsText(file,'UTF-8');
+  }else{
+    loadXLSX(function(){parseXLSX(file);});
+  }
+}
+function loadXLSX(cb){
+  if(window.XLSX){cb();return;}
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=cb;document.head.appendChild(s);
+}
+function parseXLSX(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=new Uint8Array(e.target.result);
+      // Read twice: formatted (raw:false) for display, raw (raw:true) for numbers
+      var wb   =XLSX.read(data,{type:'array',cellDates:false,raw:false});
+      var wbRaw=XLSX.read(data,{type:'array',cellDates:false,raw:true});
+      var ws   =wb.Sheets[wb.SheetNames[0]];
+      var wsRaw=wbRaw.Sheets[wbRaw.SheetNames[0]];
+
+      // ── Sheet → 2D array ────────────────────────────────────────
+      var rows   =XLSX.utils.sheet_to_json(ws,   {header:1,defval:'',raw:false});
+      var rowsRaw=XLSX.utils.sheet_to_json(wsRaw,{header:1,defval:'',raw:true });
+
+      // ── 1. Find header row ───────────────────────────────────────
+      // Strategy: score each row 0-14; highest score wins.
+      // Bonuses: matches known keywords, many non-empty cells, is text (not numbers)
+      var KEYWORDS=['nome','name','atleta','corredor','participante',
+                    'telefone','celular','sexo','gender','cidade','city',
+                    'camiseta','camisa','tamanho','size','shirt',
+                    'nasc','nascimento','data','birth','ano','idade',
+                    'percurso','modalidade','prova','distancia','tipo',
+                    'equipe','team','clube','assessoria',
+                    'pago','pagamento','status','email'];
+      var norm=function(s){return String(s||'').trim()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .toLowerCase().replace(/[\s_\-\.\/]/g,'');};
+      var bestRow=0,bestScore=-1;
+      for(var i=0;i<Math.min(15,rows.length);i++){
+        var row=rows[i];
+        var nonEmpty=row.filter(function(c){
+          var s=String(c||'').trim();
+          return s&&!s.startsWith('=');
+        }).length;
+        if(nonEmpty<2)continue;
+        var kwHits=0;
+        row.forEach(function(c){
+          var n=norm(c);
+          if(KEYWORDS.some(function(k){return n.includes(k);}))kwHits++;
+        });
+        // Text ratio: cells that are non-numeric
+        var textCells=row.filter(function(c){
+          var s=String(c||'').trim();
+          return s&&isNaN(s.replace(/[\-\/\.]/g,''))&&!s.startsWith('=');
+        }).length;
+        var score=kwHits*3+nonEmpty+textCells*0.5;
+        if(score>bestScore){bestScore=score;bestRow=i;}
+      }
+
+      // ── 2. Extract headers, skipping empty/leading cols ─────────
+      var rawHdrs=rows[bestRow];
+      // Find first non-empty col (handles LOANDA that starts at col B)
+      var colStart=0;
+      for(var ci=0;ci<rawHdrs.length;ci++){
+        if(String(rawHdrs[ci]||'').trim()&&!String(rawHdrs[ci]||'').startsWith('=')){
+          colStart=ci;break;
+        }
+      }
+      // Build header map: colIndex → header name
+      // Detect duplicate headers (ALTO_PARANA has table repeated) — keep first occurrence
+      var hdrMap={};   // colIndex → label
+      var seenHdr={};
+      for(var ci=colStart;ci<rawHdrs.length;ci++){
+        var hn=String(rawHdrs[ci]||'').trim();
+        if(!hn||hn.startsWith('='))continue;
+        if(seenHdr[norm(hn)])continue; // skip duplicate header (second table)
+        seenHdr[norm(hn)]=true;
+        hdrMap[ci]=hn;
+      }
+      var hdrs=Object.values(hdrMap);
+      importedHeaders=hdrs;
+
+      // ── 3. Build row objects ─────────────────────────────────────
+      importedRows=[];
+      var colIndices=Object.keys(hdrMap).map(Number);
+      var consecutiveEmpty=0;
+      var MAX_EMPTY=8; // stop after 8 blank rows in a row
+      for(var r=bestRow+1;r<rows.length;r++){
+        var obj={};var hasData=false;
+        colIndices.forEach(function(ci){
+          var cellTxt=String(rows[r]&&rows[r][ci]!=null?rows[r][ci]:'').trim();
+          var cellRaw=String(rowsRaw[r]&&rowsRaw[r][ci]!=null?rowsRaw[r][ci]:'').trim();
+          var val=cellTxt.startsWith('=')?cellRaw:(cellTxt||cellRaw);
+          obj[hdrMap[ci]]=val;
+          if(val)hasData=true;
+        });
+        if(!hasData){
+          consecutiveEmpty++;
+          if(consecutiveEmpty>=MAX_EMPTY)break; // sheet has phantom rows — stop here
+          continue; // skip this empty row
+        }
+        consecutiveEmpty=0; // reset on real data
+        importedRows.push(obj);
+      }
+
+      // ── 4. Auto-detect column mapping ──────────────────────────
+      // Runs on header names AND on data samples for cols without obvious names
+      _autoDetectMapping(importedHeaders,importedRows);
+
+      el('import-status').style.display='none';
+      showColMap();
+    }catch(err){
+      el('import-status').style.display='none';
+      toast('\u274C Erro ao ler planilha: '+err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Auto-detect column mapping from headers + data samples ──────
+function _autoDetectMapping(headers,rows){
+  // Will be used by showColMap; store result globally
+  window._autoMap={};
+  var norm=function(s){return String(s||'').trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[\s_\-\.\/\(\)]/g,'');};
+
+  // Score a column against a field by both header name and data content
+  var DEFS={
+    nome:{
+      al:['nome','nomecompleto','name','atleta','participante','corredor','nomeatleta','nomeatletaparticipante'],
+      test:function(vals){
+        // Long avg length, mostly alpha, no digits
+        var scored=vals.slice(0,10).filter(function(v){
+          return v.length>8&&/^[A-Za-z\u00C0-\u024F\s]+$/.test(v.trim());
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    phone:{
+      al:['telefone','celular','whatsapp','phone','fone','tel','contato','paracontato','telefoneparacontato','numero','celularwhatsapp'],
+      test:function(vals){
+        var scored=vals.slice(0,10).filter(function(v){
+          var d=v.replace(/\D/g,'');return d.length>=8&&d.length<=13;
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    nasc:{
+      al:['datadenascimento','datanascimento','datanasc','nascimento','nasc','dob','aniversario','anode','anodenascimento','anon','anonasc','datanascido','datadenadcimento','birthdate'],
+      test:function(vals){
+        var scored=vals.slice(0,10).filter(function(v){
+          var s=String(v).trim();
+          // Allow date stored as datetime with midnight time (Excel dates)
+          if(/^(19|20)\d{2}-\d{2}-\d{2}\s+00:00:00$/.test(s))return true;
+          // Exclude real datetime (has non-zero time or microseconds)
+          if(/\d{2}:\d{2}:\d{2}/.test(s))return false;
+          if(/\.\d{5}/.test(s))return false;
+          // Accept: year-only, YYYY-MM-DD, DD/MM/YYYY, DD MM YYYY, compact DDMMYYYY
+          return /^(19|20)\d{2}$/.test(s)
+            ||/^(19|20)\d{2}-\d{2}-\d{2}$/.test(s)
+            ||/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(s)
+            ||/^\d{2}\s+\d{2}\s+\d{4}/.test(s)
+            ||/^\d{8}$/.test(s.replace(/\D/g,''));
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    cidade:{
+      al:['cidade','city','municipio','local','localidade','municipios'],
+      test:function(vals){
+        var scored=vals.slice(0,10).filter(function(v){
+          // medium length, all alpha, not a name (shorter)
+          return v.length>3&&v.length<30&&/^[A-Za-z\u00C0-\u024F\s]+$/.test(v.trim());
+        });
+        // Penalize if looks like a name column (too long avg)
+        var avgLen=vals.slice(0,10).reduce(function(s,v){return s+v.length;},0)/Math.max(vals.slice(0,10).length,1);
+        return avgLen<25?(scored.length/Math.max(vals.length,1)):0;
+      }
+    },
+    sexo:{
+      al:['sexo','genero','gender','sex','genero'],
+      test:function(vals){
+        var scored=vals.slice(0,15).filter(function(v){
+          var u=v.toUpperCase().trim();
+          return u==='M'||u==='F'||u==='MASCULINO'||u==='FEMININO'||u==='MALE'||u==='FEMALE';
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    tamanho:{
+      al:['tamanho','camiseta','camisetas','camisa','shirt','size','tam','tamanhodacamiseta','tamanhodacamisa','tamanhodecamiseta'],
+      test:function(vals){
+        var scored=vals.slice(0,15).filter(function(v){
+          var u=v.toUpperCase().replace(/CAMISETAS?\s*/,'').trim();
+          return ['PP','P','M','G','GG','XG','SEM','SEM KIT','S','L','XL','XXL'].indexOf(u)>=0
+            ||/^(PP|GG|XG|[PMGP])\s/.test(u)||/^CAMISETA/.test(u.toUpperCase());
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    percurso:{
+      al:['percurso','modalidade','prova','distancia','categoria','categoriakm','tipo','km','distanciakm','modaliidade'],
+      test:function(vals){
+        var scored=vals.slice(0,10).filter(function(v){
+          return /\d+\s*km/i.test(v)||/corrida|caminhada|trail|marcha|walk|run/i.test(v)||/^\d+\s*km$/i.test(v);
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    email:{
+      al:['email','e-mail','mail','correio','emailaddress'],
+      test:function(vals){
+        var scored=vals.slice(0,10).filter(function(v){return v.includes('@');});
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    pago:{
+      al:['pago','pagamento','payment','paid','situacaopagamento','statuspagamento'],
+      test:function(vals){
+        var scored=vals.slice(0,15).filter(function(v){
+          var u=v.toUpperCase().trim();
+          return u==='SIM'||u==='NAO'||u==='PAGO'||u==='PENDENTE'||u==='CORTESIA'||u==='CORT'||u==='YES'||u==='NO';
+        });
+        return scored.length/Math.max(vals.length,1);
+      }
+    },
+    equipe:{
+      al:['equipe','team','assessoria','clube','grupo','club','time','assessoriadetreinamento'],
+      test:function(vals){return 0;} // header-only detection
+    }
+  };
+
+  // Fields that should never be auto-assigned to certain columns
+  var EXCLUDE={
+    nasc:['carimbo','hora','timestamp','created','registro','inscricao'],
+    nome:['equipe','clube','team'],
+    cidade:['uf','estado','state','pais','country']
+  };
+  headers.forEach(function(h){
+    var hn=norm(h);
+    var matched=null;
+    // First pass: exact alias match
+    Object.keys(DEFS).forEach(function(field){
+      if(matched)return;
+      // Check exclusions
+      if(EXCLUDE[field]&&EXCLUDE[field].some(function(ex){return hn.includes(norm(ex));}))return;
+      if(DEFS[field].al.some(function(a){return hn===norm(a)||hn.includes(norm(a));})){
+        matched=field;
+      }
+    });
+    if(matched){window._autoMap[h]=matched;return;}
+    // Second pass: data content scoring
+    var colVals=rows.slice(0,20).map(function(r){return String(r[h]||'').trim();}).filter(Boolean);
+    if(!colVals.length)return;
+    var best=null,bestSc=0.3; // threshold
+    Object.keys(DEFS).forEach(function(field){
+      // Skip if field already claimed
+      var already=Object.values(window._autoMap).indexOf(field)>=0;
+      if(already)return;
+      var sc=DEFS[field].test(colVals);
+      if(sc>bestSc){bestSc=sc;best=field;}
+    });
+    if(best)window._autoMap[h]=best;
+  });
+}
+
+function parseCSV(txt){
+  var lines=txt.split(/\r?\n/).filter(function(l){return l.trim();});
+  if(lines.length<2){toast('\u274C CSV vazio!');return;}
+  var hdrs=lines[0].split(',').map(function(h){return h.replace(/^"|"$/g,'').trim();});
+  importedHeaders=hdrs;
+  importedRows=lines.slice(1).map(function(line){
+    var vals=line.split(',');
+    var obj={};
+    hdrs.forEach(function(h,i){obj[h]=(vals[i]||'').replace(/^"|"$/g,'').trim();});
+    return obj;
+  });
+  window._autoMap={};
+  _autoDetectMapping(importedHeaders,importedRows);
+  el('import-status').style.display='none';
+  showColMap();
+}
+
+// Compute a fingerprint of imported rows to detect duplicate imports
+function _computeImportHash(rows){
+  var sample=rows.slice(0,20).concat(rows.slice(-5));
+  var str=sample.map(function(r){return Object.values(r).join('|');}).join('\n');
+  var h=0;
+  for(var i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0;}
+  return String(h>>>0)+'_'+rows.length;
+}
+
+
+function showColMap(){
+  el('mapping-card').style.display='block';
+  var autoMap=window._autoMap||{};
+  var fields=[
+    {key:'nome',   label:'\uD83D\uDC64 Nome'},
+    {key:'phone',  label:'\uD83D\uDCDE Telefone'},
+    {key:'nasc',   label:'\uD83C\uDF82 Nascimento'},
+    {key:'cidade', label:'\uD83C\uDFD9\uFE0F Cidade'},
+    {key:'sexo',   label:'\u26A5 Sexo'},
+    {key:'tamanho',label:'\uD83D\uDC55 Tamanho'},
+    {key:'percurso',label:'\uD83C\uDFC3 Percurso'},
+    {key:'email',  label:'\u2709\uFE0F Email'},
+    {key:'pago',   label:'\uD83D\uDCB0 Pagamento'},
+    {key:'equipe', label:'\uD83D\uDC6A Equipe'}
+  ];
+  // Build reverse map: field → best header
+  var fieldToHeader={};
+  // First: direct autoMap result
+  Object.keys(autoMap).forEach(function(h){
+    var f=autoMap[h];
+    if(!fieldToHeader[f])fieldToHeader[f]=h;
+  });
+  el('column-mapping').innerHTML=fields.map(function(f){
+    var g=fieldToHeader[f.key]||'';
+    return'<div class="cmr"><div class="cml">'+f.label+'</div>'
+      +'<select id="map-'+f.key+'">'
+      +'<option value="">\u2014 N\u00E3o mapear \u2014</option>'
+      +importedHeaders.map(function(h){
+        return'<option value="'+h+'"'+(h===g?' selected':'')+'>'+h+'</option>';
+      }).join('')
+      +'</select></div>';
+  }).join('');
+}
+
+function confirmCityAndImport(){
+  var cc=document.getElementById('map-cidade')&&document.getElementById('map-cidade').value;
+  var has=cc&&importedRows.some(function(r){return(r[cc]||'').trim()!=='';});
+  if(!has){el('city-input').value='';openModal('m-city');}
+  else doImport('');
+}
+function clearEventParticipants(){
+  var ev=getEv();
+  if(!ev){toast('⚠️ Nenhum evento ativo!');return;}
+  feraConfirm('??️','Apagar Atletas','Apagar todos os '+((ev.participants||[]).length)+' atletas de "'+ev.nome+'"? Esta ação não pode ser desfeita.',function(){
+    ev.participants=[];delete ev.importHash;
+    save();toast('??️ Todos os atletas removidos!');
+  });
+}
+function doImport(defaultCity){
+  closeModal('m-city');
+  // Check for duplicate import
+  var hash=_computeImportHash(importedRows);
+  var ev=getEv();
+  if(ev&&ev.importHash===hash){
+    toast('\u26A0\uFE0F Esta planilha j\u00E1 foi importada neste evento! Importa\u00E7\u00E3o cancelada.',4000);
+    return;
+  }
+  var g=function(k){return(el('map-'+k)&&el('map-'+k).value)||'';};
+  var mp={nome:g('nome'),phone:g('phone'),nasc:g('nasc'),cidade:g('cidade'),sexo:g('sexo'),tamanho:g('tamanho'),percurso:g('percurso'),email:g('email'),status:g('status'),pago:g('pago'),equipe:g('equipe')};
+  var added=0,skipped=0,unknSz=0;
+  var pts=getPts();
+  importedRows.forEach(function(row){
+    var nome=(mp.nome?row[mp.nome]:'')||'';
+    var phone=(mp.phone?row[mp.phone]:'')||'';
+    if(!nome.trim()&&!phone.trim()){skipped++;return;}
+    var cidade=(mp.cidade?row[mp.cidade]:'')||'';
+    if(!cidade.trim())cidade=defaultCity||'';
+    var rawSz=(mp.tamanho?row[mp.tamanho]:'')||'';
+    var tamanho=normSz(rawSz);
+    // Only count as unknown if non-empty AND not a known "no shirt" value
+    var rawUp=(rawSz||'').trim().toUpperCase();
+    var noShirt=!rawSz||rawUp===''||rawUp==='SEM'||rawUp==='SEM KIT'||rawUp==='SEM CAMISETA'||rawUp==='-'||rawUp==='0'||rawUp==='NAO';
+    if(rawSz&&!tamanho&&!noShirt)unknSz++;
+    var nasc=normDate((mp.nasc?row[mp.nasc]:'')||'');
+    var sexo=normGndr(mp.sexo?row[mp.sexo]:'');
+    var rawPago=(mp.pago?row[mp.pago]:'')||'';
+    var pagoL=rawPago.toLowerCase();
+    var pago=(!rawPago||pagoL==='0'||pagoL.includes('pend')||pagoL.includes('n\u00E3o')||pagoL==='nao'||pagoL==='n'||pagoL==='false')?'pendente':'pago';
+    pts.push({
+      id:Date.now()+'_'+added+'_'+Math.random().toString(36).slice(2),
+      nome:nome.trim(),phone:normPhone(phone),cidade:cidade.trim(),uf:'',
+      sexo:sexo,nasc:nasc,categoria:calcCat(nasc,sexo),
+      tamanho:tamanho,percurso:(mp.percurso?row[mp.percurso]:'')||'',
+      email:(mp.email?row[mp.email]:'')||'',equipe:(mp.equipe?row[mp.equipe]:'')||'',
+      status:normStatus(mp.status?row[mp.status]:''),
+      pago:pago,kitRetirado:false,obs:'',createdAt:new Date().toISOString()
+    });
+    added++;
+  });
+  setPts(pts);
+  // Save import hash to prevent re-import
+  if(ev)ev.importHash=hash;
+  save();
+  el('mapping-card').style.display='none';
+  var msg='\u2705 '+added+' atletas importados!';
+  if(skipped)msg+=' ('+skipped+' pulados)';
+  if(unknSz)msg+=' \u26A0\uFE0F '+unknSz+' tamanhos n\u00E3o reconhecidos';
+  toast(msg,3000);
+}
+
+// ── STATS ──
+function getStats(){
+  var pts=getPts();
+  var total=pts.length,males=0,females=0;
+  var sizes={PP:0,P:0,M:0,G:0,GG:0,XG:0};
+  var cityMap={},crmMap={lead:0,inscrito:0,confirmado:0,retirou:0};
+  var val=getEv()?getEv().valor||0:0;
+  var pagos=0,inadimp=0;
+  pts.forEach(function(p){
+    if(p.sexo==='F')females++;else males++;
+    if(sizes[p.tamanho]!==undefined)sizes[p.tamanho]++;
+    if(p.cidade)cityMap[p.cidade]=(cityMap[p.cidade]||0)+1;
+    crmMap[p.status]=(crmMap[p.status]||0)+1;
+    if(p.pago==='pago')pagos++;else inadimp++;
+  });
+  var topCities=Object.entries(cityMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var recEsp=total*val,recConf=pagos*val;
+  return{total:total,males:males,females:females,sizes:sizes,topCities:topCities,
+    cities:Object.keys(cityMap).length,leads:crmMap.lead,inscritos:crmMap.inscrito,
+    confirmados:crmMap.confirmado,retirads:crmMap.retirou,val:val,
+    recEsp:recEsp,recConf:recConf,aReceber:recEsp-recConf,pagos:pagos,inadimp:inadimp};
+}
+
+// ── DASHBOARD ──
+function updateDashboard(){
+  var s=getStats();
+  animN('s-total',s.total);animN('s-cities',s.cities);animN('s-m',s.males);animN('s-f',s.females);
+  ['PP','P','M','G','GG','XG'].forEach(function(sz){
+    var c=s.sizes[sz]||0,pct=s.total?Math.round(c/s.total*100):0;
+    var e1=el('sz-'+sz),e2=el('sz-'+sz+'-p');
+    if(e1)e1.textContent=c;if(e2)e2.textContent=pct+'%';
+  });
+  var cols=['var(--gold)','var(--blu)','var(--grn)','var(--yel)','var(--red)','var(--pur)'];
+  var tc=el('top-cities');
+  if(s.topCities.length){
+    var max=s.topCities[0][1];
+    tc.innerHTML='<div>'+s.topCities.map(function(c,i){
+      return'<div class="br"><div class="blb">'+(c[0]||'\u2014').substring(0,9)+'</div><div class="btr"><div class="bfill" style="width:'+Math.round(c[1]/max*100)+'%;background:'+cols[i%6]+'"><span class="bnum">'+c[1]+'</span></div></div></div>';
+    }).join('')+'</div>';
+  }else tc.innerHTML='<p style="color:var(--mut);font-size:11px">Sem dados.</p>';
+  ['lead','inscrito','confirmado','retirou'].forEach(function(st){var e=el('crm-'+st);if(e)e.textContent=s[st+'s']||0;});
+  var fin=el('fin-summary');
+  if(fin){
+    if(s.val>0){
+      fin.innerHTML='<div class="fr2"><span class="flb">Receita Esperada</span><span class="fv" style="color:var(--gold)">R$ '+fmtMoney(s.recEsp)+'</span></div>'
+        +'<div class="fr2"><span class="flb">Confirmada</span><span class="fv" style="color:var(--grn)">R$ '+fmtMoney(s.recConf)+'</span></div>'
+        +'<div class="fr2"><span class="flb">A Receber</span><span class="fv" style="color:var(--red)">R$ '+fmtMoney(s.aReceber)+'</span></div>'
+        +'<div class="fr2"><span class="flb">Pagos / Pendentes</span><span class="fv">'+s.pagos+' / <span style="color:var(--red)">'+s.inadimp+'</span></span></div>';
+    }else fin.innerHTML='<p style="color:var(--mut);font-size:11px">Configure o valor da inscri\u00E7\u00E3o ao criar o evento.</p>';
+  }
+  // Countdown
+  var extrasEl=el('dash-extras');
+  var evObj=getEv();
+  if(extrasEl)extrasEl.style.display='flex';
+  if(evObj&&evObj.data){
+    var evDate=new Date(evObj.data+'T12:00:00');
+    var today=new Date();today.setHours(12,0,0,0);
+    var diff=Math.round((evDate-today)/(864e5));
+    var ne=el('countdown-num'),le=el('countdown-label');
+    if(ne&&le){
+      if(diff>0){ne.textContent=diff;le.textContent='dias para o evento';}
+      else if(diff===0){ne.textContent='HOJE';ne.style.fontSize='18px';le.textContent='\uD83C\uDFC6 Dia do Evento!';}
+      else{ne.textContent=Math.abs(diff);le.textContent='dias desde o evento';}
+    }
+  }else{var n2=el('countdown-num');var l2=el('countdown-label');if(n2)n2.textContent='\u2014';if(l2)l2.textContent='sem data';}
+  // Meta
+  var evId=db.activeEventId;
+  var metaGoal=evId&&db.eventMetas?db.eventMetas[evId]||0:0;
+  var metaPct=metaGoal>0?Math.min(100,Math.round(s.total/metaGoal*100)):0;
+  if(el('meta-bar'))el('meta-bar').style.width=metaPct+'%';
+  if(el('meta-bar'))el('meta-bar').style.background=metaPct>=100?'var(--grn)':'var(--gold)';
+  if(el('meta-goal'))el('meta-goal').textContent=metaGoal||'Definir';
+  if(el('meta-current'))el('meta-current').textContent=s.total;
+  if(el('meta-pct'))el('meta-pct').textContent=metaGoal?metaPct+'% da meta':'';
+  // Top Equipes
+  var pts2=getPts();
+  var eqMap={};
+  pts2.forEach(function(p){var eq=(p.equipe||'').trim();if(eq&&eq.toLowerCase()!=='avulso'&&eq.toLowerCase()!=='individual')eqMap[eq]=(eqMap[eq]||0)+1;});
+  var eqArr=Object.entries(eqMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var eqCard=el('dash-equipes-card'),eqEl=el('dash-equipes');
+  if(eqCard)eqCard.style.display=eqArr.length?'block':'none';
+  if(eqEl&&eqArr.length){
+    var mxEq=eqArr[0][1];
+    eqEl.innerHTML='<div>'+eqArr.map(function(eq,i){
+      return'<div class="br"><div class="blb">'+eq[0].substring(0,14)+'</div><div class="btr"><div class="bfill" style="width:'+Math.round(eq[1]/mxEq*100)+'%;background:'+cols[i%6]+'"><span class="bnum">'+eq[1]+'</span></div></div></div>';
+    }).join('')+'</div>';
+  }
+}
+function openMetaEditor(){
+  var ed=el('meta-editor');if(!ed)return;
+  ed.style.display=ed.style.display==='none'?'block':'none';
+  var cur=db.activeEventId&&db.eventMetas?db.eventMetas[db.activeEventId]||0:0;
+  el('meta-input').value=cur||'';
+}
+function saveMeta(){
+  var evId=db.activeEventId;if(!evId)return;
+  if(!db.eventMetas)db.eventMetas={};
+  db.eventMetas[evId]=parseInt(el('meta-input').value)||0;
+  save();
+  el('meta-editor').style.display='none';
+  toast('\uD83C\uDFAF Meta salva!');
+}
+
+// ── PARTICIPANTS ──
+function filterByCrm(status){showPage('atletas',document.querySelectorAll('nav button')[2]);curFilter='crm_'+status;renderParticipants();}
+function setFilter(f,btn){
+  curFilter=f;
+  document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderParticipants();
+}
+function renderParticipants(){
+  var pts=getPts();var q=(el('search-input')||{}).value||'';
+  var filtered=pts.filter(function(p){
+    var fl=curFilter;
+    if(fl==='todos'){}
+    else if(fl.startsWith('sexo_')&&p.sexo!==fl.split('_')[1])return false;
+    else if(fl.startsWith('tam_')&&p.tamanho!==fl.split('_')[1])return false;
+    else if(fl==='sem_cidade'&&p.cidade)return false;
+    else if(fl==='inadimplente'&&p.pago==='pago')return false;
+    else if(fl==='pago'&&p.pago!=='pago')return false;
+    else if(fl.startsWith('crm_')&&p.status!==fl.split('_')[1])return false;
+    if(q){var ql=q.toLowerCase();var hay=(p.nome+' '+(p.cidade||'')+' '+(p.categoria||'')+' '+(p.phone||'')+' '+(p.equipe||'')).toLowerCase();if(!hay.includes(ql))return false;}
+    return true;
+  });
+  var lst=el('participant-list');if(!lst)return;
+  if(!filtered.length){lst.innerHTML='<div style="text-align:center;padding:30px"><div style="font-size:36px;margin-bottom:8px">🔍</div><p style="color:var(--mut);font-size:12px">Nenhum atleta encontrado.</p></div>';return;}
+  var scMap={lead:'rgba(107,101,96,.15)',inscrito:'rgba(0,102,187,.10)',confirmado:'rgba(184,134,11,.10)',retirou:'rgba(10,122,66,.10)'};
+  lst.innerHTML=filtered.slice(0,200).map(function(p){
+    var bcol=p.pago==='pago'?'var(--grn)':'var(--red)';
+    return'<div class="pi" onclick="openDetail(\''+p.id+'\')">'
+      +'<div class="av '+(p.sexo==='F'?'f':'m')+'">'+(p.nome||'?').split(' ').map(function(n){return n[0];}).slice(0,2).join('').toUpperCase()+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="pn">'+p.nome+'</div>'
+      +'<div class="pm">'+(p.tamanho?'\uD83D\uDC55 '+p.tamanho+' \u00B7 ':'')+''+(p.categoria||p.percurso||'')+' \u00B7 '+(p.cidade||'\u2014')+'</div>'
+      +(p.equipe?'<div class="pm">\uD83D\uDC6A '+p.equipe+'</div>':'')
+      +'</div>'
+      +'<div class="ps">'
+      +'<div class="badge" style="background:'+scMap[p.status||'inscrito']+';border:1px solid '+scMap[p.status||'inscrito'].replace('.10','.3')+'"><span style="color:var(--mut);font-size:9px">'+(p.status||'inscrito')+'</span></div>'
+      +'<div style="width:7px;height:7px;border-radius:50%;background:'+bcol+';margin:4px auto 0"></div>'
+      +'</div></div>';
+  }).join('');
+  if(filtered.length>200)lst.innerHTML+='<p style="text-align:center;color:var(--mut);font-size:11px;padding:8px">... e mais '+(filtered.length-200)+' atletas</p>';
+}
+function openDetail(id){
+  var pts=getPts();var p=pts.find(function(x){return x.id===id;});if(!p)return;
+  var wn=(p.phone||'').replace(/\D/g,'');
+  var sc={lead:'var(--mut)',inscrito:'var(--blu)',confirmado:'var(--gold)',retirou:'var(--grn)'};
+  var sl={lead:'Lead',inscrito:'Inscrito',confirmado:'Confirmado',retirou:'Retirou Kit'};
+  el('detail-content').innerHTML='<div style="text-align:center;margin-bottom:14px">'
+    +'<div class="av '+(p.sexo==='F'?'f':'m')+'" style="width:58px;height:58px;font-size:22px;margin:0 auto 8px;border-radius:12px">'+(p.nome||'?').split(' ').map(function(n){return n[0];}).slice(0,2).join('').toUpperCase()+'</div>'
+    +'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:21px;font-weight:900;letter-spacing:1px">'+(p.nome||'Sem nome')+'</div>'
+    +'<div style="color:'+(sc[p.status]||'var(--mut)')+';font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-top:2px">'+(sl[p.status]||p.status||'')+'</div>'
+    +'<div style="margin-top:6px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">'
+    +(p.categoria?'<span class="tag tcat">'+p.categoria+'</span>':'')
+    +(p.percurso?'<span class="tag ts">'+p.percurso+'</span>':'')
+    +'<span class="badge" style="background:'+(p.pago==='pago'?'rgba(10,122,66,.12)':'rgba(204,34,51,.1)')+';color:'+(p.pago==='pago'?'var(--grn)':'var(--red)')+';border:1px solid '+(p.pago==='pago'?'rgba(10,122,66,.3)':'rgba(204,34,51,.25)')+';">'+(p.pago==='pago'?'\u2705 Pago':'\u26A0\uFE0F N\u00E3o Pago')+'</span>'
+    +(p.kitRetirado?'<span class="badge" style="background:rgba(10,122,66,.12);color:var(--grn);border:1px solid rgba(10,122,66,.3)">\uD83C\uDFBD Kit Retirado</span>':'')
+    +'</div></div>'
+    +'<div class="sg" style="margin-bottom:10px">'
+    +'<div class="sc gld" style="padding:9px"><div class="ts"></div><div style="font-size:8px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.7px">Camiseta</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:900;color:var(--gold)">'+(p.tamanho||'\u2014')+'</div></div>'
+    +'<div class="sc blu" style="padding:9px"><div class="ts"></div><div style="font-size:8px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.7px">Sexo</div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:22px;font-weight:900">'+(p.sexo==='M'?'\u2642 Masc':p.sexo==='F'?'\u2640 Fem':p.sexo||'\u2014')+'</div></div>'
+    +'</div>'
+    +(p.cidade?'<div style="font-size:12px;color:var(--mut);margin-bottom:5px">\uD83D\uDCCD '+p.cidade+(p.uf?' \u2013 '+p.uf:'')+'</div>':'')
+    +(p.phone?'<div style="font-size:12px;color:var(--mut);margin-bottom:5px">\uD83D\uDCDE '+p.phone+'</div>':'')
+    +(p.email?'<div style="font-size:12px;color:var(--mut);margin-bottom:5px">\u2709\uFE0F '+p.email+'</div>':'')
+    +(p.nasc?'<div style="font-size:12px;color:var(--mut);margin-bottom:5px">\uD83C\uDF82 '+fmtDate(p.nasc)+(p.categoria?' \u00B7 '+p.categoria:'')+'</div>':'')
+    +(p.equipe?'<div style="font-size:12px;color:var(--mut);margin-bottom:5px">\uD83D\uDC6A '+p.equipe+'</div>':'')
+    +(p.obs?'<div style="background:var(--surf2);border-radius:7px;padding:8px;margin:8px 0;font-size:11px;color:var(--mut)">\uD83D\uDCDD '+p.obs+'</div>':'')
+    +'<div class="div"></div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +(wn.length>=10?'<a class="btn btn-wa" href="https://wa.me/55'+wn+'" target="_blank" style="text-decoration:none">\uD83D\uDCAC ABRIR WHATSAPP</a>':'')
+    +'<button class="btn btn-b" onclick="showQR(\''+p.id+'\');">\uD83D\uDCF2 QR CODE DO KIT</button>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+    +'<select onchange="updField(\''+p.id+'\',\'status\',this.value)" style="padding:8px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;color:var(--txt);font-family:\'Barlow\',sans-serif;font-size:11px">'
+    +'<option value="lead"'+(p.status==='lead'?' selected':'')+'>Lead</option>'
+    +'<option value="inscrito"'+(p.status==='inscrito'?' selected':'')+'>Inscrito</option>'
+    +'<option value="confirmado"'+(p.status==='confirmado'?' selected':'')+'>Confirmado</option>'
+    +'<option value="retirou"'+(p.status==='retirou'?' selected':'')+'>Retirou Kit</option>'
+    +'</select>'
+    +'<select onchange="updField(\''+p.id+'\',\'pago\',this.value)" style="padding:8px;background:var(--surf2);border:1px solid var(--brd);border-radius:8px;color:var(--txt);font-family:\'Barlow\',sans-serif;font-size:11px">'
+    +'<option value="pago"'+(p.pago==='pago'?' selected':'')+'>✅ Pago</option>'
+    +'<option value="pendente"'+(p.pago!=='pago'?' selected':'')+'>\u26A0\uFE0F Pendente</option>'
+    +'</select></div>'
+    +'<button onclick="delPart(\''+p.id+'\')" style="padding:8px;background:var(--red);border:none;border-radius:8px;color:white;font-weight:700;cursor:pointer;font-size:12px">\uD83D\uDDD1\uFE0F Excluir</button>'
+    +'</div>';
+  openModal('m-detail');
+}
+function updField(id,field,val){
+  var pts=getPts();var p=pts.find(function(x){return x.id===id;});
+  if(p){p[field]=val;setPts(pts);save();updateDashboard();renderParticipants();renderLiveList();toast('\u2705 Atualizado!');}
+}
+function delPart(id){
+  feraConfirm('\uD83D\uDDD1\uFE0F','Excluir Atleta','Tem certeza?',function(){
+    setPts(getPts().filter(function(x){return x.id!==id;}));save();
+    closeModal('m-detail');updateDashboard();renderParticipants();renderLiveList();toast('\uD83D\uDDD1\uFE0F Removido!');
+  });
+}
+
+// ── QR ──
+function showQR(id){
+  qrAthleteId=id;
+  var pts=getPts();var p=pts.find(function(x){return x.id===id;});if(!p)return;
+  var canvas=el('qr-canvas');var ctx=canvas.getContext('2d');
+  canvas.width=240;canvas.height=240;
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,240,240);
+  var data=JSON.stringify({id:p.id,nome:p.nome,tamanho:p.tamanho,ev:getEv()?getEv().nome:''});
+  var txt=p.nome+'|'+p.tamanho+'|'+p.id.slice(-6);
+  // Draw QR-like pattern (simplified)
+  ctx.fillStyle='#1A1A1A';
+  ctx.font='bold 11px Barlow,sans-serif';ctx.textAlign='center';
+  ctx.fillText(p.nome.substring(0,20),120,165);
+  ctx.font='700 20px Barlow Condensed,sans-serif';ctx.fillStyle=p.tamanho?'#B8860B':'#1A1A1A';
+  ctx.fillText('\uD83D\uDC55 '+p.tamanho,120,190);
+  ctx.font='500 9px JetBrains Mono,monospace';ctx.fillStyle='#6B6560';
+  ctx.fillText('ID: '+p.id.slice(-8),120,210);
+  // Draw finder patterns
+  function drawFinder(x,y){
+    ctx.fillStyle='#1A1A1A';ctx.fillRect(x,y,63,63);
+    ctx.fillStyle='#fff';ctx.fillRect(x+7,y+7,49,49);
+    ctx.fillStyle='#1A1A1A';ctx.fillRect(x+14,y+14,35,35);
+  }
+  drawFinder(10,10);drawFinder(167,10);drawFinder(10,167);
+  // Data modules
+  for(var i=0;i<txt.length;i++){
+    var cc=txt.charCodeAt(i);
+    for(var b=0;b<8;b++){
+      if(cc&(1<<b)){
+        var mx=80+(i*7+b*3)%80;var my=80+(i*3+b*5)%60;
+        ctx.fillStyle='#1A1A1A';ctx.fillRect(mx,my,5,5);
+      }
+    }
+  }
+  el('qr-info').innerHTML='<div style="font-weight:700;font-size:14px;margin-bottom:3px">'+p.nome+'</div>'
+    +'<div style="color:var(--gold);font-weight:700">'+(p.tamanho||'Sem tamanho')+'</div>'
+    +(p.kitRetirado?'<div style="color:var(--grn);font-size:11px;margin-top:4px">\u2705 Kit j\u00E1 retirado</div>':'');
+  closeModal('m-detail');openModal('m-qr');
+}
+function confirmKitByQR(){
+  if(!qrAthleteId)return;
+  var pts=getPts();var p=pts.find(function(x){return x.id===qrAthleteId;});
+  if(p){p.kitRetirado=true;p.status='retirou';p.pago='pago';}
+  setPts(pts);save();closeModal('m-qr');updateDashboard();renderParticipants();renderLiveList();
+  toast('\uD83C\uDFBD Kit confirmado para '+p.nome+'!');
+}
+
+// ── LIVE ──
+function setLiveFilter(f,btn){
+  liveFilter=f;
+  document.querySelectorAll('#page-aovivo .chip').forEach(function(c){c.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  renderLiveList();
+}
+function renderLiveList(){
+  var pts=getPts();
+  var q=(el('live-search')||{}).value||'';
+  var total=pts.length,done=pts.filter(function(p){return p.kitRetirado;}).length;
+  var progEl=el('live-progress');
+  if(progEl){
+    var pct=total?Math.round(done/total*100):0;
+    progEl.innerHTML='<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:var(--mut)">Retiradas: <strong style="color:var(--txt)">'+done+'/'+total+'</strong></span><span style="color:var(--gold);font-weight:700">'+pct+'%</span></div>'
+      +'<div style="background:var(--surf2);border-radius:5px;height:6px;overflow:hidden"><div style="width:'+pct+'%;height:6px;background:var(--grn);border-radius:5px;transition:width .4s"></div></div>';
+  }
+  var filtered=pts.filter(function(p){
+    if(liveFilter==='pend'&&p.kitRetirado)return false;
+    if(liveFilter==='done'&&!p.kitRetirado)return false;
+    if(q){var ql=q.toLowerCase();var hay=(p.nome+' '+(p.cidade||'')+' '+(p.phone||'')).toLowerCase();if(!hay.includes(ql))return false;}
+    return true;
+  });
+  var lst=el('live-list');if(!lst)return;
+  if(!filtered.length){lst.innerHTML='<p style="text-align:center;color:var(--mut);font-size:12px;padding:20px">Nenhum atleta encontrado.</p>';return;}
+  lst.innerHTML=filtered.slice(0,150).map(function(p){
+    return'<div class="li'+(p.kitRetirado?' done':'')+'">'
+      +'<div class="av '+(p.sexo==='F'?'f':'m')+'" style="width:34px;height:34px;font-size:12px">'+(p.nome||'?').split(' ').map(function(n){return n[0];}).slice(0,2).join('').toUpperCase()+'</div>'
+      +'<div style="flex:1;min-width:0"><div class="li-name">'+p.nome+'</div><div style="font-size:10px;color:var(--mut)">'+(p.categoria||p.percurso||'')+' \u00B7 '+(p.cidade||'')+'</div></div>'
+      +'<div class="li-sz">'+(p.tamanho||'?')+'</div>'
+      +(p.kitRetirado
+        ?'<button class="li-btn done" onclick="toggleKit(\''+p.id+'\',false)">\u2705 OK</button>'
+        :'<button class="li-btn pend" onclick="toggleKit(\''+p.id+'\',true)">\uD83C\uDFBD Entregar</button>')
+      +'</div>';
+  }).join('');
+}
+function toggleKit(id,val){
+  var pts=getPts();var p=pts.find(function(x){return x.id===id;});
+  if(p){p.kitRetirado=val;if(val){p.status='retirou';p.pago='pago';}}
+  setPts(pts);save();renderLiveList();updateDashboard();
+}
+
+// ── WHATSAPP / REGIME ──
+function renderRegime(){
+  var lst=el('regime-list');if(!lst)return;
+  // Event banner
+  var ev=getEv();
+  var banner=el('wa-event-banner');
+  var info=el('wa-event-info');
+  if(ev&&banner&&info){
+    banner.style.display='block';
+    // Cover photo
+    var cover=el('wa-event-cover');
+    var coverImg=el('wa-cover-img');
+    var coverLbl=el('wa-cover-label');
+    if(ev.foto&&cover&&coverImg){
+      cover.style.display='block';
+      coverImg.src=ev.foto;
+      if(coverLbl)coverLbl.textContent=ev.nome;
+      info.style.display='none'; // hide text row when we have a cover
+    }else{
+      if(cover)cover.style.display='none';
+      info.style.display='flex';
+      var photoHtml='<div class="wa-ev-photo-placeholder">\uD83C\uDFC3</div>';
+      info.innerHTML=photoHtml
+        +'<div><div style="font-size:13px;font-weight:700;color:var(--txt)">'+ev.nome+'</div>'
+        +(ev.data?'<div style="font-size:11px;color:var(--mut);margin-top:2px">\uD83D\uDCC5 '+fmtDate(ev.data)+(ev.cidade?' \u00B7 '+ev.cidade:'')+'</div>':'')
+        +'<div style="font-size:11px;color:var(--gold);margin-top:2px">\uD83D\uDC65 '+(ev.participants||[]).length+' inscritos</div>'
+        +'</div>';
+    }
+    // Stats row below cover
+    if(ev.foto){
+      info.style.display='flex';
+      info.innerHTML='<div style="flex:1">'
+        +(ev.data?'<span style="font-size:11px;color:var(--mut)">\uD83D\uDCC5 '+fmtDate(ev.data)+(ev.cidade?' \u00B7 '+ev.cidade:'')+'</span>':'')
+        +'</div>'
+        +'<span style="font-size:11px;color:var(--gold);font-weight:700">\uD83D\uDC65 '+(ev.participants||[]).length+' inscritos</span>';
+    }
+  }else if(banner){banner.style.display='none';}
+  // Templates
+  var colors={d7:'#0066BB',d3:'#B8860B',d1:'#0A7A42',dp1:'#7C3AED',nps:'#CC8800',cob:'#CC2233',livre:'#6B6560'};
+  lst.innerHTML=REGIME.map(function(r){
+    var rid=r.id;
+    var col=colors[rid]||'#B8860B';
+    return'<div class="ri" style="border-left:3px solid '+(r.on?col:'var(--brd2)')+';opacity:'+(r.on?'1':'0.65')+'">'
+      +'<div class="rd">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+      +'<span style="background:'+col+';color:#fff;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700">'+r.day+'</span>'
+      +'<span style="font-size:11px;font-weight:600;color:var(--txt)">'+r.label+'</span>'
+      +'</div>'
+      +'<div class="rt" style="line-height:1.45;margin-bottom:6px;font-size:11px;color:var(--mut)">'+r.msg+'</div>'
+      +'<button onclick="useTemplate(this)" data-rid="'+rid+'" style="background:var(--gdim);border:1px solid rgba(184,134,11,.3);color:var(--gold);border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;cursor:pointer;font-family:Barlow,sans-serif">\u2197 Usar como mensagem</button>'
+      +'</div>'
+      +'<button class="tog '+(r.on?'on':'off')+'" onclick="toggleRegime(this)" data-rid="'+rid+'"></button>'
+      +'</div>';
+  }).join('');
+}
+function toggleRegime(btn){
+  var id=btn.getAttribute('data-rid');
+  var r=REGIME.find(function(x){return x.id===id;});if(!r)return;
+  r.on=!r.on;renderRegime();
+}
+function useTemplate(btn){
+  var id=btn.getAttribute('data-rid');
+  var r=REGIME.find(function(x){return x.id===id;});if(!r)return;
+  var ta=el('msg-custom');
+  if(ta){ta.value=r.msg;ta.focus();setTimeout(function(){ta.scrollIntoView({behavior:'smooth',block:'center'});},100);}
+  toast('↗ Template aplicado! Configure o lote e envie.');
+}
+function setBatch(n,btn){
+  batchSz=n;
+  document.querySelectorAll('.bb').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+function setFilter(f,btn){
+  batchFilter=f;
+  document.querySelectorAll('.bf').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+function prepareBatch(){
+  var pts=getPts();
+  var msg=el('msg-custom').value.trim();
+  if(!msg){toast('\u26A0\uFE0F Escreva a mensagem antes!');return;}
+  var filtered=pts.filter(function(p){
+    if(!p.phone||p.phone.replace(/\D/g,'').length<10)return false;
+    if(batchFilter==='pendente')return p.pago!=='pago';
+    if(batchFilter==='pago')return p.pago==='pago';
+    if(batchFilter==='semkit')return !p.kitRetirado;
+    return true;
+  });
+  if(!filtered.length){toast('\u26A0\uFE0F Nenhum atleta com telefone nesse filtro!');return;}
+  batchTargets=filtered;
+  batchIdx=0;
+  el('batch-panel').style.display='block';
+  renderBatchCurrent();
+  toast('\uD83D\uDE80 Disparo iniciado! '+filtered.length+' atletas na fila.');
+  // scroll to panel
+  setTimeout(function(){el('batch-panel').scrollIntoView({behavior:'smooth',block:'start'});},200);
+}
+function renderBatchCurrent(){
+  var total=batchTargets.length;
+  if(batchIdx>=total){
+    el('batch-panel').innerHTML='<div style="text-align:center;padding:24px">'
+      +'<div style="font-size:32px;margin-bottom:8px">\u2705</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--txt);margin-bottom:4px">Disparo conclu\u00EDdo!</div>'
+      +'<div style="font-size:12px;color:var(--mut)">'+total+' mensagens enviadas</div>'
+      +'<button onclick="resetBatch()" style="margin-top:16px;background:var(--gdim);border:1px solid var(--brd2);color:var(--gold);border-radius:8px;padding:8px 20px;font-size:12px;cursor:pointer;font-family:Barlow,sans-serif">\uD83D\uDD04 Novo disparo</button>'
+      +'</div>';
+    return;
+  }
+  var p=batchTargets[batchIdx];
+  var msg=el('msg-custom').value.trim();
+  var m=interp(msg,p);
+  var wn=p.phone.replace(/\D/g,'');
+  var pct=Math.round(batchIdx/total*100);
+  // Progress bar
+  var bar=el('batch-progress-bar');
+  var txt=el('batch-progress-txt');
+  if(bar)bar.style.width=pct+'%';
+  if(txt)txt.textContent=(batchIdx)+' de '+total+' enviados \u2022 '+( total-batchIdx)+' restantes';
+  // Current card
+  var nameEl=el('batch-current-name');
+  var infoEl=el('batch-current-info');
+  var msgEl=el('batch-current-msg');
+  var waBtn=el('batch-wa-btn');
+  if(nameEl)nameEl.textContent=p.nome||'Atleta';
+  if(infoEl)infoEl.innerHTML=
+    '\uD83D\uDCF1 '+wn
+    +(p.cidade?' \u00B7 \uD83D\uDCCD '+p.cidade:'')
+    +(p.tamanho?' \u00B7 \uD83D\uDC55 '+p.tamanho:'')
+    +(p.pago==='pago'
+      ?' \u00B7 <span style="color:#0A7A42;font-weight:700">\u2714 Pago</span>'
+      :'  \u00B7 <span style="color:#CC2233;font-weight:700">\u26A0 Pendente</span>');
+  if(msgEl)msgEl.textContent=m;
+  if(waBtn){
+    waBtn.href='https://wa.me/55'+wn+'?text='+encodeURIComponent(m);
+  }
+  // Remaining list (next 5)
+  var rem=el('batch-remaining');
+  if(rem){
+    var next=batchTargets.slice(batchIdx+1,batchIdx+6);
+    if(next.length){
+      rem.innerHTML='<div style="font-size:10px;color:var(--mut);font-weight:600;margin-bottom:4px;letter-spacing:.5px">NA FILA:</div>'
+        +next.map(function(px,i){
+          return'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--brd2)">'
+            +'<span style="color:var(--mut);font-size:10px;min-width:16px">'+(batchIdx+i+2)+'.</span>'
+            +'<span style="font-size:11px;color:var(--txt);flex:1">'+px.nome+'</span>'
+            +(px.pago!=='pago'?'<span style="font-size:9px;color:#CC2233;font-weight:700">PENDENTE</span>':'')
+            +'</div>';
+        }).join('')
+        +(total-batchIdx-1>5?'<div style="font-size:10px;color:var(--mut);text-align:center;padding-top:6px">+ '+(total-batchIdx-6)+' outros</div>':'');
+    }else{rem.innerHTML='';}
+  }
+}
+function markSentAndNext(){
+  // Mark as messaged (optional future use), advance
+  setTimeout(function(){
+    batchIdx++;
+    renderBatchCurrent();
+  },800);
+}
+function skipCurrent(){
+  batchIdx++;
+  renderBatchCurrent();
+  toast('\u23ED Pulado! Pr\u00F3ximo...');
+}
+function resetBatch(){
+  batchIdx=0;batchTargets=[];
+  el('batch-panel').style.display='none';
+  el('batch-panel').innerHTML='<!-- reset -->';
+  // rebuild panel html
+  el('batch-panel').outerHTML='<div id="batch-panel" style="display:none;margin-top:16px">'
+    +'<div style="background:var(--brd2);border-radius:99px;height:6px;margin-bottom:10px"><div id="batch-progress-bar" style="background:var(--gold);height:6px;border-radius:99px;transition:width .3s;width:0%"></div></div>'
+    +'<div id="batch-progress-txt" style="font-size:11px;color:var(--mut);text-align:center;margin-bottom:12px"></div>'
+    +'<div id="batch-current-card" style="background:var(--inp);border:1px solid var(--brd2);border-radius:12px;padding:14px;margin-bottom:10px">'
+    +'<div style="font-size:10px;color:var(--mut);margin-bottom:6px;font-weight:600;letter-spacing:.5px">PR\u00d3XIMO A ENVIAR</div>'
+    +'<div id="batch-current-name" style="font-size:16px;font-weight:700;color:var(--txt);margin-bottom:2px"></div>'
+    +'<div id="batch-current-info" style="font-size:11px;color:var(--mut);margin-bottom:10px"></div>'
+    +'<div id="batch-current-msg" style="font-size:11px;color:var(--txt);background:var(--srf);border-radius:8px;padding:8px;margin-bottom:12px;line-height:1.5;border-left:3px solid var(--gold)"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<a id="batch-wa-btn" href="#" target="_blank" onclick="markSentAndNext()" style="flex:1;background:#128C7E;color:#fff;border-radius:9px;padding:11px;font-size:13px;font-weight:700;text-decoration:none;text-align:center;display:block">\uD83D\uDCF2 Abrir no WhatsApp</a>'
+    +'<button onclick="skipCurrent()" style="background:var(--brd2);color:var(--mut);border:none;border-radius:9px;padding:11px 14px;font-size:12px;cursor:pointer;font-family:Barlow,sans-serif">Pular \u23ED</button>'
+    +'</div></div>'
+    +'<div id="batch-remaining" style="font-size:11px;color:var(--mut)"></div>'
+    +'</div>';
+}
+function interp(msg,p){
+  var ev=getEv();
+  return msg.replace(/\{nome\}/gi,p.nome||'Atleta')
+    .replace(/\{evento\}/gi,ev?ev.nome:'evento')
+    .replace(/\{cidade\}/gi,p.cidade||ev&&ev.cidade||'')
+    .replace(/\{tamanho\}/gi,p.tamanho||'')
+    .replace(/\{percurso\}/gi,p.percurso||'')
+    .replace(/\{equipe\}/gi,p.equipe||'');
+}
+
+// ── CHARTS ──
+var COPTS={plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6B6560',font:{family:'Barlow',size:10}},grid:{color:'#E8E3DA'}},y:{ticks:{color:'#6B6560',font:{family:'Barlow',size:10}},grid:{color:'#E8E3DA'}}},responsive:true,maintainAspectRatio:false};
+function renderCharts(){
+  var pts=getPts();
+  if(!pts.length){return;}
+
+  // Percurso
+  var percMap={};
+  pts.forEach(function(p){var k=(p.percurso||'').trim()||'Geral';percMap[k]=(percMap[k]||0)+1;});
+  var percKeys=Object.keys(percMap).sort(function(a,b){return percMap[b]-percMap[a];}).slice(0,8);
+  mkChart('chart-percurso','bar',percKeys,percKeys.map(function(k){return percMap[k];}),['#B8860B','#D4A830','#0A7A42','#0066BB','#CC2233','#7C3AED','#CC8800','#A09890']);
+
+  // Categoria de Idade — fallback to percurso if no birth data
+  var catMap={};
+  pts.forEach(function(p){if(p.categoria&&p.categoria.trim())catMap[p.categoria]=(catMap[p.categoria]||0)+1;});
+  var catTitleEl=document.getElementById('chart-cat-title');
+  if(!Object.keys(catMap).length){
+    catMap={};
+    pts.forEach(function(p){var k=(p.percurso||'').trim()||'Geral';catMap[k]=(catMap[k]||0)+1;});
+    if(catTitleEl)catTitleEl.textContent='Por Percurso (sem nasc.)';
+  }else{
+    if(catTitleEl)catTitleEl.textContent='Por Categoria de Idade';
+  }
+  var catKeys=Object.keys(catMap).sort(function(a,b){return catMap[b]-catMap[a];});
+  mkChart('chart-cat','bar',catKeys,catKeys.map(function(k){return catMap[k];}),['#0066BB','#B8860B','#0A7A42','#CC2233','#7C3AED','#CC8800','#A09890','#D4A830']);
+
+  // Sexo donut
+  var males=pts.filter(function(p){return p.sexo!=='F';}).length;
+  var females=pts.length-males;
+  if(charts['cg']){try{charts['cg'].destroy();}catch(e){}}
+  var gc=el('chart-gender');
+  if(gc)charts['cg']=new Chart(gc,{type:'doughnut',data:{labels:['Masculino','Feminino'],datasets:[{data:[males,females],backgroundColor:['#0066BB','#CC2233'],borderWidth:0,hoverOffset:6}]},options:{plugins:{legend:{display:false}},cutout:'70%',responsive:true,maintainAspectRatio:false}});
+  var total=pts.length;
+  if(el('chart-gender-legend'))el('chart-gender-legend').innerHTML=
+    '<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#0066BB;display:inline-block"></span><span style="color:#0066BB">'+(total?Math.round(males/total*100):0)+'%</span> Masc ('+males+')</span>'
+    +'<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#CC2233;display:inline-block"></span><span style="color:#CC2233">'+(total?Math.round(females/total*100):0)+'%</span> Fem ('+females+')</span>';
+
+  // Crescimento / Distribuicao
+  var dayMap={};
+  pts.forEach(function(p){var d=(p.createdAt||'').substring(0,10);if(d)dayMap[d]=(dayMap[d]||0)+1;});
+  var days=Object.keys(dayMap).sort();
+  var grTitleEl=document.getElementById('chart-growth-title');
+  if(days.length<=1){
+    var szOrder=['PP','P','M','G','GG','XG'];
+    var szVals=szOrder.map(function(s){return pts.filter(function(p){return p.tamanho===s;}).length;});
+    if(grTitleEl)grTitleEl.textContent='Distribuição por Tamanhos';
+    mkChart('chart-growth','bar',szOrder,szVals,['#B8860B','#D4A830','#0A7A42','#0066BB','#CC2233','#7C3AED'],false);
+  }else{
+    if(grTitleEl)grTitleEl.textContent='Crescimento de Inscrições';
+    var cumulative=[];var acc=0;
+    days.forEach(function(d){acc+=dayMap[d];cumulative.push(acc);});
+    mkChart('chart-growth','line',days.map(function(d){return d.substring(5);}),cumulative,['#B8860B'],true);
+  }
+}
+
+function mkChart(id,type,labels,data,colors,isLine){
+  if(charts[id]){try{charts[id].destroy();}catch(e){}}
+  var c=el(id);if(!c)return;
+  var ds={data:data,backgroundColor:isLine?'rgba(184,134,11,.12)':colors,borderColor:isLine?colors[0]:undefined,borderWidth:isLine?2:0,tension:0.4,fill:isLine};
+  charts[id]=new Chart(c,{type:type,data:{labels:labels,datasets:[ds]},options:COPTS});
+}
+async function generateInsights(){
+  var pts=getPts();var ev=getEv();
+  var area=el('insights-area');
+  if(!pts.length){toast('\u26A0\uFE0F Sem atletas para analisar!');return;}
+  area.innerHTML='<div style="text-align:center;padding:16px"><div style="font-size:28px;animation:roar 1s infinite">🦁</div><div style="font-size:12px;color:var(--mut);margin-top:6px">Analisando dados...</div></div>';
+  var s=getStats();
+  var prompt='Voc\u00EA \u00E9 um especialista em marketing esportivo. Analise estes dados de um evento de corrida e gere 3-4 insights pr\u00E1ticos (em portugu\u00EAs, cada um em uma linha come\u00E7ando com emoji):\nEvento: '+(ev?ev.nome:'N/D')+'\nAtletas: '+s.total+', Masc: '+s.males+' ('+Math.round(s.males/s.total*100)+'%), Fem: '+s.females+'\nCidades: '+s.cities+'\nCamisetas: PP='+s.sizes.PP+' P='+s.sizes.P+' M='+s.sizes.M+' G='+s.sizes.G+' GG='+s.sizes.GG+' XG='+s.sizes.XG+'\nPagos: '+s.pagos+' / Pendentes: '+s.inadimp+'\nCRM: Lead='+s.leads+' Inscrito='+s.inscritos+' Confirmado='+s.confirmados+' Retirou='+s.retirads;
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})});
+    var d=await resp.json();
+    var txt=d.content&&d.content[0]?d.content[0].text:'';
+    if(txt){
+      area.innerHTML=txt.split('\n').filter(function(l){return l.trim();}).map(function(l){
+        var cl=l.includes('⚠')||l.includes('risco')||l.includes('aten')?'red':l.includes('✅')||l.includes('bom')||l.includes('excelente')?'grn':l.includes('💡')||l.includes('sugest')?'blu':'gld';
+        return'<div class="insight '+cl+'"><div class="insight-b">'+l+'</div></div>';
+      }).join('');
+    }else{area.innerHTML='<div class="insight red"><div class="insight-b">\u274C Sem resposta da IA. Verifique a conex\u00E3o.</div></div>';}
+  }catch(err){area.innerHTML=genLocalInsights(s);}
+}
+
+// ── GERAL (CONSOLIDADO) ──
+
+// -- LOCAL INSIGHTS --
+function genLocalInsights(s){
+  var insights=[];
+  var total=s.total||1;
+  var femPct=Math.round((s.females||0)/total*100);
+  if(femPct>55)insights.push({c:'gld',t:'?? Evento muito feminino!',b:femPct+'% mulheres. Ative comunicação e patrocinadores do nicho feminino.'});
+  else if(femPct<35)insights.push({c:'blu',t:'?? Maioria masculina',b:'Apenas '+femPct+'% de mulheres. Crie campanhas específicas para atrair mais atletas femininas.'});
+  else insights.push({c:'grn',t:'✅ Equilíbrio de gênero',b:'Distribuição equilibrada: '+femPct+'% fem / '+(100-femPct)+'% masc. Ótimo sinal de diversidade!'});
+  var inadPct=Math.round((s.inadimp||0)/total*100);
+  if(inadPct>30)insights.push({c:'red',t:'⚠️ Alta inadimplência!',b:inadPct+'% não pagaram ('+s.inadimp+' pessoas). Acione cobrança via WhatsApp agora!'});
+  else if(inadPct>15)insights.push({c:'gld',t:'?? Pagamentos pendentes',b:s.inadimp+' atletas pendentes ('+inadPct+'%). Envie lembrete em lote.'});
+  else insights.push({c:'grn',t:'?? Adimplência excelente!',b:'Apenas '+inadPct+'% inadimplentes. Parabéns pelo controle financeiro!'});
+  var bigSizes=((s.sizes&&s.sizes.G)||0)+((s.sizes&&s.sizes.GG)||0)+((s.sizes&&s.sizes.XG)||0);
+  var bigPct=Math.round(bigSizes/total*100);
+  if(bigPct>55)insights.push({c:'gld',t:'?? Camisetas grandes dominam',b:bigPct+'% usam G/GG/XG. Garanta estoque suficiente dessas medições.'});
+  else if(s.sizes&&s.sizes.M>total*0.3)insights.push({c:'gld',t:'?? Tamanho M lidera',b:'M é o mais pedido com '+s.sizes.M+' unidades. Garanta estoque extra.'});
+  if((s.cities||0)>20)insights.push({c:'blu',t:'?? Evento regional forte!',b:s.cities+' cidades representadas. Considere parceria com hotéis e sinalização para visitantes.'});
+  else if((s.cities||0)<=5&&s.cities>0)insights.push({c:'gld',t:'?? Evento local',b:'Maioria local ('+s.cities+' cidade(s)). Divulgue em cidades vizinhas para crescer.'});
+  if(!insights.length)insights.push({c:'gld',t:'?? Dados incompletos',b:'Importe planilha com data de nascimento, cidade e status de pagamento para insights mais ricos.'});
+  return insights.map(function(i){return'<div class="insight '+i.c+'"><div class="insight-t">'+i.t+'</div><div class="insight-b">'+i.b+'</div></div>';}).join('');
+}
+
+function renderGeral(){
+  var evs=Object.values(db.events).filter(function(ev){return(ev.participants||[]).length>0;});
+  // KPIs
+  var totalAtletas=0,allCities=new Set(),totalRecConf=0;
+  var allPts=[];
+  evs.forEach(function(ev){
+    var pts=ev.participants||[];
+    totalAtletas+=pts.length;
+    pts.forEach(function(p){if(p.cidade)allCities.add(p.cidade);});
+    var val=ev.valor||0;
+    var pagos=pts.filter(function(p){return p.pago==='pago';}).length;
+    totalRecConf+=pagos*val;
+    pts.forEach(function(p){allPts.push(Object.assign({},p,{_evNome:ev.nome,_evId:ev.id}));});
+  });
+  animN('cons-eventos',evs.length);
+  animN('cons-atletas',totalAtletas);
+  animN('cons-cidades',allCities.size);
+  // Receita in thousands
+  el('cons-receita').textContent='R$'+(totalRecConf>=1000?Math.round(totalRecConf/1000)+'k':Math.round(totalRecConf));
+  // Ranking eventos
+  var sorted=evs.slice().sort(function(a,b){return(b.participants||[]).length-(a.participants||[]).length;});
+  var maxT=sorted.length?(sorted[0].participants||[]).length:1;
+  var medals=['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
+  var rankEl=el('cons-ranking');
+  if(rankEl){
+    rankEl.innerHTML=sorted.map(function(ev,i){
+      var pts=ev.participants||[];var t=pts.length;
+      var bar=Math.round(t/maxT*100);
+      var icon=medals[i]||(i+1+'\u00BA');
+      return'<div style="margin-bottom:9px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
+        +'<span style="font-size:12px;font-weight:700">'+icon+' '+ev.nome.substring(0,22)+'</span>'
+        +'<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:var(--gold)">'+t+'</span></div>'
+        +'<div style="background:var(--surf2);border-radius:4px;height:8px;overflow:hidden">'
+        +'<div style="width:'+bar+'%;height:8px;background:var(--gold);border-radius:4px;transition:width .4s"></div></div>'
+        +(ev.data?'<div style="font-size:10px;color:var(--mut);margin-top:2px">'+fmtDate(ev.data)+(ev.cidade?' \u00B7 '+ev.cidade:'')+'</div>':'')
+        +'</div>';
+    }).join('');
+  }
+  // Top Equipes GERAL (deduplicated per event per athlete)
+  var eqMapGeral={};
+  evs.forEach(function(ev){
+    var seen={};
+    (ev.participants||[]).forEach(function(p){
+      var eq=(p.equipe||'').trim();
+      if(eq&&eq.toLowerCase()!=='avulso'&&eq.toLowerCase()!=='individual'&&!seen[p.phone+'_'+eq]){
+        seen[p.phone+'_'+eq]=true;
+        eqMapGeral[eq]=(eqMapGeral[eq]||0)+1;
+      }
+    });
+  });
+  var eqGeralArr=Object.entries(eqMapGeral).sort(function(a,b){return b[1]-a[1];}).slice(0,15);
+  var eqGeralCard=el('cons-equipes-card');
+  if(eqGeralCard)eqGeralCard.style.display=eqGeralArr.length?'block':'none';
+  var eqGeralEl=el('cons-equipes');
+  if(eqGeralEl&&eqGeralArr.length){
+    var mxG=eqGeralArr[0][1];
+    var cols2=['var(--gold)','var(--blu)','var(--grn)','var(--yel)','var(--red)','var(--pur)'];
+    var medals2=['\uD83E\uDD47','\uD83E\uDD48','\uD83E\uDD49'];
+    eqGeralEl.innerHTML=eqGeralArr.map(function(eq,i){
+      var icon=medals2[i]||(i+1+'\u00BA');
+      return'<div style="margin-bottom:9px">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">'
+        +'<span style="font-size:12px;font-weight:700">'+icon+' '+eq[0].substring(0,22)+'</span>'
+        +'<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:var(--gold)">'+eq[1]+' atletas</span></div>'
+        +'<div style="background:var(--surf2);border-radius:4px;height:8px;overflow:hidden">'
+        +'<div style="width:'+Math.round(eq[1]/mxG*100)+'%;height:8px;background:'+cols2[i%6]+';border-radius:4px"></div></div>'
+        +'</div>';
+    }).join('');
+  }
+  // Shirts total
+  var allSizes={PP:0,P:0,M:0,G:0,GG:0,XG:0};
+  allPts.forEach(function(p){if(allSizes[p.tamanho]!==undefined)allSizes[p.tamanho]++;});
+  ['PP','P','M','G','GG','XG'].forEach(function(sz){var e=el('csz-'+sz);if(e)e.textContent=allSizes[sz];});
+  // Gender
+  var males=allPts.filter(function(p){return p.sexo!=='F';}).length;
+  var females=allPts.length-males;
+  if(charts['cg2']){try{charts['cg2'].destroy();}catch(e){}}
+  var cgc=el('chart-cons-gender');
+  if(cgc)charts['cg2']=new Chart(cgc,{type:'doughnut',data:{labels:['Masculino','Feminino'],datasets:[{data:[males,females],backgroundColor:['#0066BB','#CC2233'],borderWidth:0,hoverOffset:6}]},options:{plugins:{legend:{display:false}},cutout:'70%',responsive:true,maintainAspectRatio:false}});
+  var totG=allPts.length;
+  var cgLeg=el('cons-gender-legend');
+  if(cgLeg)cgLeg.innerHTML='<span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#0066BB;display:inline-block"></span><span style="color:#0066BB">'+(totG?Math.round(males/totG*100):0)+'%</span> Masc ('+males+')</span><span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:50%;background:#CC2233;display:inline-block"></span><span style="color:#CC2233">'+(totG?Math.round(females/totG*100):0)+'%</span> Fem ('+females+')</span>';
+  // Recorrentes — deduplicated per event
+  var phoneMap={};
+  evs.forEach(function(ev){
+    var seenInEv={};
+    (ev.participants||[]).forEach(function(p){
+      var ph=(p.phone||'').replace(/\D/g,'');
+      if(ph.length>=8&&!seenInEv[ph]){
+        seenInEv[ph]=true;
+        if(!phoneMap[ph])phoneMap[ph]={nome:p.nome,phone:ph,events:[]};
+        phoneMap[ph].events.push(ev.nome);
+      }
+    });
+  });
+  var recurrent=Object.values(phoneMap).filter(function(x){return x.events.length>1;})
+    .sort(function(a,b){return b.events.length-a.events.length;}).slice(0,20);
+  var recEl=el('cons-recurrent');
+  if(recEl){
+    if(recurrent.length){
+      recEl.innerHTML=recurrent.map(function(x){
+        return'<div class="pi" style="cursor:default">'
+          +'<div class="av m" style="width:36px;height:36px;font-size:13px">'+x.nome.split(' ').map(function(n){return n[0];}).slice(0,2).join('').toUpperCase()+'</div>'
+          +'<div style="flex:1;min-width:0"><div class="pn">'+x.nome+'</div>'
+          +'<div class="pm">'+x.events.map(function(e){return'<span class="tag ts">'+e.substring(0,14)+'</span>';}).join('')+'</div></div>'
+          +'<div style="font-family:JetBrains Mono,monospace;font-size:17px;font-weight:900;color:var(--gold);flex-shrink:0">'+x.events.length+'x</div>'
+          +'</div>';
+      }).join('');
+    }else{recEl.innerHTML='<p style="color:var(--mut);font-size:11px;text-align:center;padding:10px">Nenhum atleta recorrente ainda.<br>Importe mais eventos para cruzar dados.</p>';}
+  }
+  // Financial
+  var finEl=el('cons-financeiro');
+  if(finEl){
+    var totalEsp=0,totalConf2=0,totalPagos2=0,totalInad=0;
+    evs.forEach(function(ev){
+      var pts2=ev.participants||[];var val=ev.valor||0;
+      var pagos2=pts2.filter(function(p){return p.pago==='pago';}).length;
+      totalEsp+=pts2.length*val;totalConf2+=pagos2*val;
+      totalPagos2+=pagos2;totalInad+=pts2.length-pagos2;
+    });
+    finEl.innerHTML='<div class="fr2"><span class="flb">Receita Esperada Total</span><span class="fv" style="color:var(--gold)">R$ '+fmtMoney(totalEsp)+'</span></div>'
+      +'<div class="fr2"><span class="flb">Receita Confirmada</span><span class="fv" style="color:var(--grn)">R$ '+fmtMoney(totalConf2)+'</span></div>'
+      +'<div class="fr2"><span class="flb">A Receber</span><span class="fv" style="color:var(--red)">R$ '+fmtMoney(totalEsp-totalConf2)+'</span></div>'
+      +'<div class="fr2"><span class="flb">Pagos / Inadimplentes</span><span class="fv">'+totalPagos2+' / <span style="color:var(--red)">'+totalInad+'</span></span></div>';
+  }
+}
+
+// ── EXPORT EXCEL (evento único) ──
+function exportExcel(){
+  var ev=getEv();var pts=getPts();
+  if(!pts.length){toast('\u26A0\uFE0F Sem dados para exportar!');return;}
+  var rows=[['Nome','Telefone','Cidade','Sexo','Nascimento','Categoria','Tamanho','Percurso','Equipe','Status','Pago','Kit Retirado','Email']];
+  pts.forEach(function(p){rows.push([p.nome||'',p.phone||'',p.cidade||'',p.sexo||'',fmtDate(p.nasc),p.categoria||'',p.tamanho||'',p.percurso||'',p.equipe||'',p.status||'',p.pago||'',p.kitRetirado?'Sim':'N\u00E3o',p.email||'']);});
+  var s=getStats();
+  var resumo=[['Métrica','Valor'],['Total de Atletas',s.total],['Masculino',s.males],['Feminino',s.females],['Cidades',s.cities],['Camiseta PP',s.sizes.PP],['Camiseta P',s.sizes.P],['Camiseta M',s.sizes.M],['Camiseta G',s.sizes.G],['Camiseta GG',s.sizes.GG],['Camiseta XG',s.sizes.XG],['Pagos',s.pagos],['Pendentes',s.inadimp],['Receita Esperada','R$ '+fmtMoney(s.recEsp)],['Receita Confirmada','R$ '+fmtMoney(s.recConf)]];
+  var kit=[['Nº','Nome','Tamanho','Percurso','Cidade','Assinatura']];
+  pts.filter(function(p){return!p.kitRetirado;}).forEach(function(p,i){kit.push([i+1,p.nome||'',p.tamanho||'',p.percurso||'',p.cidade||'','']);});
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Atletas');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumo),'Resumo');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kit),'Lista Kit');
+  try{
+    XLSX.writeFile(wb,(ev?ev.nome.replace(/[^a-zA-Z0-9]/g,'_'):'Fera')+'_Fera_Esportes.xlsx');
+  }catch(e){
+    var wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var blob=new Blob([wbout],{type:'application/octet-stream'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=(ev?ev.nome.replace(/[^a-zA-Z0-9]/g,'_'):'Fera')+'_Fera_Esportes.xlsx';
+    a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
+  }
+  toast('\uD83D\uDCCA Excel exportado!');
+}
+
+// ── EXPORT EXCEL GERAL ──
+function exportGeralExcel(){
+  var evs=Object.values(db.events).filter(function(ev){return(ev.participants||[]).length>0;});
+  if(!evs.length){toast('\u26A0\uFE0F Nenhum evento com dados!');return;}
+  var wb=XLSX.utils.book_new();
+  // Sheet per event
+  evs.forEach(function(ev){
+    var rows=[['Nome','Telefone','Cidade','Sexo','Nasc.','Categoria','Tamanho','Percurso','Equipe','Status','Pago','Kit']];
+    (ev.participants||[]).forEach(function(p){
+      rows.push([p.nome||'',p.phone||'',p.cidade||'',p.sexo||'',fmtDate(p.nasc),p.categoria||'',p.tamanho||'',p.percurso||'',p.equipe||'',p.status||'',p.pago||'',p.kitRetirado?'Sim':'N\u00E3o']);
+    });
+    var shName=ev.nome.replace(/[^a-zA-Z0-9 ]/g,'').substring(0,31);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),shName||('Evento'+ev.id.slice(-4)));
+  });
+  // Consolidated sheet
+  var cons=[['Evento','Data','Cidade','Atletas','Masc','Fem','PP','P','M','G','GG','XG','Pagos','Pend.','Rec.Esp','Rec.Conf']];
+  evs.forEach(function(ev){
+    var pts=ev.participants||[];var val=ev.valor||0;
+    var m=pts.filter(function(p){return p.sexo!=='F';}).length;
+    var sz={PP:0,P:0,M:0,G:0,GG:0,XG:0};pts.forEach(function(p){if(sz[p.tamanho]!==undefined)sz[p.tamanho]++;});
+    var pg=pts.filter(function(p){return p.pago==='pago';}).length;
+    cons.push([ev.nome,fmtDate(ev.data),ev.cidade||'',pts.length,m,pts.length-m,sz.PP,sz.P,sz.M,sz.G,sz.GG,sz.XG,pg,pts.length-pg,pts.length*val,pg*val]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(cons),'Consolidado');
+  // Equipes
+  var eqMap={};
+  evs.forEach(function(ev){(ev.participants||[]).forEach(function(p){var eq=(p.equipe||'').trim();if(eq&&eq.toLowerCase()!=='avulso')eqMap[eq]=(eqMap[eq]||0)+1;});});
+  var eqRows=[['Equipe / Assessoria','Total de Atletas']].concat(Object.entries(eqMap).sort(function(a,b){return b[1]-a[1];}).map(function(e){return[e[0],e[1]];}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(eqRows),'Ranking Equipes');
+  try{
+    XLSX.writeFile(wb,'Fera_Esportes_Geral_'+new Date().toISOString().substring(0,10)+'.xlsx');
+  }catch(e){
+    var wbout=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var blob=new Blob([wbout],{type:'application/octet-stream'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='Fera_Esportes_Geral_'+new Date().toISOString().substring(0,10)+'.xlsx';
+    a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
+  }
+  toast('\uD83D\uDCCA Excel Geral exportado!');
+}
+
+// ── EXPORT PDF (evento único) ──
+function exportPDF(){
+  var ev=getEv();var pts=getPts();
+  if(!pts.length){toast('\u26A0\uFE0F Sem dados para exportar!');return;}
+  toast('\u23F3 Gerando PDF...',4000);
+  var s=getStats();
+  setTimeout(function(){_doPDF(ev,pts,s,false);},100);
+}
+
+// ── EXPORT PDF GERAL ──
+function exportGeralPDF(){
+  var evs=Object.values(db.events).filter(function(ev){return(ev.participants||[]).length>0;});
+  if(!evs.length){toast('\u26A0\uFE0F Nenhum evento com dados!');return;}
+  toast('\u23F3 Gerando PDF Geral...',5000);
+  setTimeout(function(){_doPDFGeral(evs);},100);
+}
+
+function _doPDF(ev,pts,s,isGeral){
+  var W=595,H=842;
+  var pages=[];
+  var c=document.createElement('canvas');c.width=W;c.height=H;
+  var ctx=c.getContext('2d');
+  function newPage(){ctx.fillStyle='#FAFAFA';ctx.fillRect(0,0,W,H);}
+  function header(title){
+    ctx.fillStyle='#B8860B';ctx.fillRect(0,0,W,48);
+    ctx.fillStyle='#fff';ctx.font='bold 20px sans-serif';ctx.textAlign='left';ctx.fillText('\uD83E\uDD81 FERA ESPORTES',16,30);
+    ctx.font='12px sans-serif';ctx.textAlign='right';ctx.fillText(title,W-16,30);
+    ctx.fillStyle='#1A1A1A';ctx.font='11px sans-serif';ctx.textAlign='left';
+    var d=new Date().toLocaleDateString('pt-BR');
+    ctx.fillText('Gerado em '+d,16,44);
+    return 64;
+  }
+  function sectionTitle(txt,y){
+    ctx.fillStyle='#B8860B';ctx.font='bold 13px sans-serif';ctx.textAlign='left';
+    ctx.fillText(txt,16,y);
+    ctx.fillStyle='#DDD8CC';ctx.fillRect(16,y+4,W-32,1);
+    return y+20;
+  }
+  function statBox(label,value,x,y,w,color){
+    ctx.fillStyle='#fff';ctx.strokeStyle='#DDD8CC';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,w,56,6):ctx.rect(x,y,w,56);ctx.fill();ctx.stroke();
+    ctx.fillStyle=color||'#B8860B';ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.fillText(String(value),x+w/2,y+30);
+    ctx.fillStyle='#6B6560';ctx.font='9px sans-serif';ctx.fillText(label,x+w/2,y+46);
+  }
+  // Page 1
+  newPage();
+  var y=header(ev?ev.nome:'Relat\u00F3rio Geral');
+  ctx.fillStyle='#1A1A1A';ctx.font='bold 18px sans-serif';ctx.textAlign='center';
+  ctx.fillText(ev?ev.nome:'Fera Esportes \u2014 Geral',W/2,y+14);
+  ctx.fillStyle='#6B6560';ctx.font='11px sans-serif';
+  if(ev&&ev.data)ctx.fillText(fmtDate(ev.data)+(ev.cidade?' \u00B7 '+ev.cidade:''),W/2,y+30);
+  y+=50;
+  y=sectionTitle('\uD83D\uDCCA Resumo Geral',y);
+  var bw=(W-40)/4;
+  statBox('INSCRITOS',s.total,16,y,bw,'#B8860B');
+  statBox('MASCULINO',s.males,16+bw+4,y,bw,'#0066BB');
+  statBox('FEMININO',s.females,16+bw*2+8,y,bw,'#CC2233');
+  statBox('CIDADES',s.cities,16+bw*3+12,y,bw,'#0A7A42');
+  y+=66;
+  y=sectionTitle('\uD83D\uDC55 Camisetas',y);
+  var szs=['PP','P','M','G','GG','XG'];var sw2=(W-40)/6;
+  szs.forEach(function(sz,i){
+    var cnt=s.sizes[sz]||0;
+    statBox(sz,cnt,16+i*(sw2+2),y,sw2-2,cnt?(cnt===Math.max.apply(null,szs.map(function(z){return s.sizes[z]||0;}))?'#B8860B':'#6B6560'):'#A09890');
+  });
+  y+=66;
+  y=sectionTitle('\uD83C\uDFD9\uFE0F Top Cidades',y);
+  var maxC=s.topCities.length?s.topCities[0][1]:1;
+  s.topCities.slice(0,6).forEach(function(ci){
+    var pct=Math.round(ci[1]/maxC*(W-180));
+    ctx.fillStyle='#F9F6F0';ctx.fillRect(16,y,W-32,16);
+    ctx.fillStyle='rgba(184,134,11,.2)';ctx.fillRect(120,y,pct,16);
+    ctx.fillStyle='#1A1A1A';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText((ci[0]||'—').substring(0,15),20,y+11);
+    ctx.fillStyle='#B8860B';ctx.font='bold 10px sans-serif';ctx.textAlign='right';ctx.fillText(ci[1],W-20,y+11);
+    y+=18;
+  });
+  y+=8;
+  y=sectionTitle('\uD83D\uDCB0 Financeiro',y);
+  if(s.val>0){
+    var finItems=[['Receita Esperada','R$ '+fmtMoney(s.recEsp),'#B8860B'],['Confirmada','R$ '+fmtMoney(s.recConf),'#0A7A42'],['A Receber','R$ '+fmtMoney(s.aReceber),'#CC2233'],['Pagos',''+s.pagos,'#0A7A42'],['Pendentes',''+s.inadimp,'#CC2233']];
+    finItems.forEach(function(fi){
+      ctx.fillStyle='#F9F6F0';ctx.fillRect(16,y,W-32,18);
+      ctx.fillStyle='#6B6560';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText(fi[0],20,y+12);
+      ctx.fillStyle=fi[2];ctx.font='bold 10px sans-serif';ctx.textAlign='right';ctx.fillText(fi[1],W-20,y+12);
+      y+=20;
+    });
+  }else{ctx.fillStyle='#A09890';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText('Valor da inscri\u00E7\u00E3o n\u00E3o configurado.',20,y+12);y+=20;}
+  pages.push(c.toDataURL('image/jpeg',0.9));
+  // Page 2: athlete table
+  var perPage=40;var totalPages=Math.ceil(pts.length/perPage);
+  for(var pg=0;pg<Math.min(totalPages,5);pg++){
+    newPage();
+    var ty=header(ev?ev.nome:'Atletas');
+    ty=sectionTitle('\uD83D\uDC65 Lista de Atletas ('+(pg*perPage+1)+'-'+Math.min((pg+1)*perPage,pts.length)+')',ty);
+    ctx.fillStyle='#B8860B';ctx.fillRect(16,ty,W-32,16);
+    ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='left';
+    ['Nº','Nome','Camiseta','Percurso','Cidade','Status'].forEach(function(h,i){ctx.fillText(h,20+[0,30,260,310,370,450][i],ty+11);});
+    ty+=18;
+    pts.slice(pg*perPage,(pg+1)*perPage).forEach(function(p,i){
+      ctx.fillStyle=i%2===0?'#F9F6F0':'#fff';ctx.fillRect(16,ty,W-32,14);
+      ctx.fillStyle='#1A1A1A';ctx.font='8.5px sans-serif';ctx.textAlign='left';
+      ctx.fillText(String(pg*perPage+i+1),20,ty+10);
+      ctx.fillText((p.nome||'').substring(0,26),50,ty+10);
+      ctx.fillStyle=p.tamanho?'#B8860B':'#A09890';
+      ctx.fillText(p.tamanho||'—',265,ty+10);
+      ctx.fillStyle='#1A1A1A';
+      ctx.fillText((p.percurso||'').substring(0,6),315,ty+10);
+      ctx.fillText((p.cidade||'').substring(0,10),375,ty+10);
+      ctx.fillStyle=p.status==='retirou'?'#0A7A42':p.status==='confirmado'?'#B8860B':'#6B6560';
+      ctx.fillText(p.status||'',455,ty+10);
+      ty+=14;
+    });
+    pages.push(c.toDataURL('image/jpeg',0.9));
+  }
+  _buildPDF(pages,ev?ev.nome.replace(/[^a-zA-Z0-9]/g,'_'):'Fera_Esportes');
+}
+
+function _doPDFGeral(evs){
+  var W=595,H=842;
+  var pages=[];
+  var c=document.createElement('canvas');c.width=W;c.height=H;
+  var ctx=c.getContext('2d');
+  var allPts=[];evs.forEach(function(ev){(ev.participants||[]).forEach(function(p){allPts.push(p);});});
+  function newPage(){ctx.fillStyle='#FAFAFA';ctx.fillRect(0,0,W,H);}
+  function header(){
+    ctx.fillStyle='#B8860B';ctx.fillRect(0,0,W,48);
+    ctx.fillStyle='#fff';ctx.font='bold 20px sans-serif';ctx.textAlign='left';ctx.fillText('\uD83E\uDD81 FERA ESPORTES \u2014 RELAT\u00D3RIO GERAL',16,30);
+    ctx.font='11px sans-serif';ctx.textAlign='right';var d=new Date().toLocaleDateString('pt-BR');ctx.fillText('Gerado em '+d,W-16,30);
+    ctx.fillStyle='#1A1A1A';return 64;
+  }
+  function secTitle(txt,y){
+    ctx.fillStyle='#B8860B';ctx.font='bold 13px sans-serif';ctx.textAlign='left';ctx.fillText(txt,16,y);
+    ctx.fillStyle='#DDD8CC';ctx.fillRect(16,y+4,W-32,1);return y+20;
+  }
+  // Page 1: Overview
+  newPage();
+  var y=header();
+  ctx.fillStyle='#1A1A1A';ctx.font='bold 14px sans-serif';ctx.textAlign='left';ctx.fillText('Consolidado de '+evs.length+' eventos \u2022 '+allPts.length+' atletas',16,y+14);y+=36;
+  // Summary boxes
+  y=secTitle('\uD83D\uDCCA KPIs Gerais',y);
+  var totalMasc=allPts.filter(function(p){return p.sexo!=='F';}).length;
+  var totalFem=allPts.length-totalMasc;
+  var allCities2=new Set(allPts.map(function(p){return p.cidade;}).filter(Boolean));
+  var totalRecConf2=0;evs.forEach(function(ev){var v=ev.valor||0;var pg=(ev.participants||[]).filter(function(p){return p.pago==='pago';}).length;totalRecConf2+=pg*v;});
+  var bw2=(W-40)/4;
+  function sb2(lbl,val,x2,y2,w2,col){
+    ctx.fillStyle='#fff';ctx.strokeStyle='#DDD8CC';ctx.lineWidth=1;
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x2,y2,w2,54,6);else ctx.rect(x2,y2,w2,54);ctx.fill();ctx.stroke();
+    ctx.fillStyle=col||'#B8860B';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.fillText(String(val),x2+w2/2,y2+28);
+    ctx.fillStyle='#6B6560';ctx.font='9px sans-serif';ctx.fillText(lbl,x2+w2/2,y2+44);
+  }
+  sb2('EVENTOS',evs.length,16,y,bw2,'#B8860B');sb2('ATLETAS',allPts.length,20+bw2,y,bw2,'#0066BB');
+  sb2('CIDADES',allCities2.size,24+bw2*2,y,bw2,'#0A7A42');sb2('REC.CONF','R$'+(totalRecConf2>=1000?Math.round(totalRecConf2/1000)+'k':Math.round(totalRecConf2)),28+bw2*3,y,bw2,'#CC8800');
+  y+=66;
+  // Shirts
+  y=secTitle('\uD83D\uDC55 Camisetas Consolidado',y);
+  var szMap2={PP:0,P:0,M:0,G:0,GG:0,XG:0};allPts.forEach(function(p){if(szMap2[p.tamanho]!==undefined)szMap2[p.tamanho]++;});
+  var sw3=(W-40)/6;
+  Object.entries(szMap2).forEach(function(e,i){
+    ctx.fillStyle='#fff';ctx.strokeStyle='#DDD8CC';ctx.lineWidth=1;
+    var bx=16+i*(sw3+2);
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,y,sw3-2,46,5);else ctx.rect(bx,y,sw3-2,46);ctx.fill();ctx.stroke();
+    ctx.fillStyle='#B8860B';ctx.font='bold 16px sans-serif';ctx.textAlign='center';ctx.fillText(String(e[1]),bx+(sw3-2)/2,y+24);
+    ctx.fillStyle='#6B6560';ctx.font='9px sans-serif';ctx.fillText(e[0],bx+(sw3-2)/2,y+38);
+  });
+  y+=58;
+  // Ranking eventos
+  y=secTitle('\uD83C\uDFC6 Ranking de Eventos',y);
+  var sortedE=evs.slice().sort(function(a,b){return(b.participants||[]).length-(a.participants||[]).length;});
+  var maxE=sortedE.length?(sortedE[0].participants||[]).length:1;
+  sortedE.slice(0,8).forEach(function(ev,i){
+    var t=(ev.participants||[]).length;
+    var bw3=Math.round(t/maxE*(W-250));
+    ctx.fillStyle='#F9F6F0';ctx.fillRect(16,y,W-32,18);
+    ctx.fillStyle='rgba(184,134,11,.35)';ctx.fillRect(190,y,bw3,18);
+    ctx.fillStyle='#1A1A1A';ctx.font='9px sans-serif';ctx.textAlign='left';
+    ctx.fillText((i+1)+'. '+ev.nome.substring(0,22)+(ev.data?' ('+fmtDate(ev.data)+')':''),20,y+12);
+    ctx.fillStyle='#B8860B';ctx.font='bold 10px sans-serif';ctx.textAlign='right';ctx.fillText(t+' atletas',W-20,y+12);
+    y+=20;
+  });
+  y+=8;
+  // Equipes
+  var eqMap3={};evs.forEach(function(ev){(ev.participants||[]).forEach(function(p){var eq=(p.equipe||'').trim();if(eq&&eq.toLowerCase()!=='avulso')eqMap3[eq]=(eqMap3[eq]||0)+1;});});
+  var topEq=Object.entries(eqMap3).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  if(topEq.length){
+    y=secTitle('\uD83C\uDFC5 Ranking de Equipes',y);
+    var maxEq2=topEq[0][1];
+    topEq.forEach(function(eq,i){
+      var bw4=Math.round(eq[1]/maxEq2*(W-250));
+      ctx.fillStyle='#F9F6F0';ctx.fillRect(16,y,W-32,18);
+      ctx.fillStyle='rgba(184,134,11,.35)';ctx.fillRect(190,y,bw4,18);
+      ctx.fillStyle='#1A1A1A';ctx.font='9px sans-serif';ctx.textAlign='left';ctx.fillText((i+1)+'. '+eq[0].substring(0,28),20,y+12);
+      ctx.fillStyle='#B8860B';ctx.font='bold 10px sans-serif';ctx.textAlign='right';ctx.fillText(eq[1]+' atletas',W-20,y+12);
+      y+=20;
+    });
+  }
+  pages.push(c.toDataURL('image/jpeg',0.9));
+  _buildPDF(pages,'Fera_Esportes_Geral_'+new Date().toISOString().substring(0,10));
+}
+
+function _buildPDF(pages,fname){
+  try{
+    var jsPDFLib=(window.jspdf&&window.jspdf.jsPDF)?window.jspdf.jsPDF:(window.jsPDF||null);
+    if(!jsPDFLib){
+      toast('\u23F3 Carregando jsPDF...');
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload=function(){setTimeout(function(){_buildPDF(pages,fname);},300);};
+      document.head.appendChild(s);
+      return;
+    }
+    var doc=new jsPDFLib({orientation:'portrait',unit:'pt',format:'a4'});
+    pages.forEach(function(dataUrl,i){
+      if(i>0)doc.addPage();
+      doc.addImage(dataUrl,'JPEG',0,0,595,842,undefined,'FAST');
+    });
+    doc.save(fname+'.pdf');
+    toast('\uD83D\uDCC4 PDF exportado com sucesso!');
+  }catch(e){
+    console.error('PDF error:',e);
+    toast('\u274C Erro ao gerar PDF: '+e.message);
+  }
+}
+
+
+// ── INIT DISTANCE SELECTOR ──
+function initDistSel(){
+  var opts=['<option value="">Adicionar dist\u00E2ncia...</option>'];
+  for(var i=1;i<=20;i++)opts.push('<option value="'+i+'km">'+i+'km</option>');
+  [25,30,35,40,42,50,60,70,80,100].forEach(function(v){opts.push('<option value="'+v+'km">'+v+'km</option>');});
+  var sel=el('ev-dist-sel');if(sel)sel.innerHTML=opts.join('');
+}
+
+// ── INIT ──
+initDistSel();
+renderEvents();updateHeader();renderRegime();renderGeral();
+if(db.activeEventId&&db.events[db.activeEventId]){updateDashboard();renderParticipants();renderLiveList();}
+window.addEventListener('storage',function(e){if(e.key==='fera_v5'&&e.newValue){try{db=JSON.parse(e.newValue);}catch(err){}_doRefresh();}});
+setTimeout(function(){var sp=el('splash');if(sp){sp.style.opacity='0';setTimeout(function(){sp.style.display='none';},600);}},1800);
+</script>
+</body>
+</html>
